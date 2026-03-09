@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<updates>
+  <update>
+    <app id="petvalu-bot@family">
+      <version>1.2</version>
+      <update_link>https://kv-10.github.io/petvalu-bot/petvalu-bot.xpi</update_link>
+    </app>
+  </update>
+</updates>
