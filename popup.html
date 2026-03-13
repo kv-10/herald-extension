@@ -29,65 +29,153 @@
   --muted:  #6e9e7e;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Outfit', system-ui, sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; }
+body {
+  width: 380px;
+  background: var(--bg); color: var(--text);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px; -webkit-font-smoothing: antialiased;
+  animation: bodyFade 0.35s ease forwards;
+}
+@keyframes bodyFade { from { opacity: 0; } to { opacity: 1; } }
 
-.header { padding: 12px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; background: var(--s1); }
-.header-logo { width: 22px; height: 22px; flex-shrink: 0; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-.header-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 14px; font-weight: 800; color: var(--text); flex: 1; letter-spacing: -0.3px; }
-.header-store { font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accentd); border: 1px solid rgba(20,83,45,0.3); border-radius: 20px; padding: 2px 10px; font-family: 'IBM Plex Mono', monospace; }
+/* ── HEADER ── */
+.header {
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  background: var(--s1);
+}
+.header-logo {
+  width: 26px; height: 26px; flex-shrink: 0;
+  background: var(--accent); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(20,83,45,0.2);
+}
+.header-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px; font-weight: 800; color: var(--text); flex: 1;
+  letter-spacing: -0.3px;
+}
+.header-store {
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  background: var(--accentd); border: 1px solid rgba(20,83,45,0.3);
+  border-radius: 20px; padding: 2px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+}
 
+/* ── SECTIONS ── */
 .section { padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
-.section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 10px; }
-.btn { width: 100%; padding: 11px; border-radius: 10px; border: none; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.12s; }
-.btn:active { opacity: 0.85; }
+.section-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--muted); margin-bottom: 10px;
+}
+.btn { width: 100%; padding: 11px; border-radius: 10px; border: none; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.12s, transform 0.1s; }
+.btn:active { opacity: 0.85; transform: scale(0.98); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-accent  { background: var(--accent); color: #fff; }
 .btn-outline { background: var(--s1); border: 1px solid var(--border); color: var(--text2); margin-top: 8px; }
 .btn-red     { background: var(--redd); border: 1px solid var(--red); color: var(--red); margin-top: 8px; }
 
-.store-group { background: var(--s1); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+/* ── STORE GROUPS ── */
+.store-group {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  animation: cardSlideIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
+}
 .store-group:last-child { margin-bottom: 0; }
-.sg-header { padding: 11px 14px 8px; border-bottom: 1px solid var(--border); }
-.sg-store { font-family: 'Bricolage Grotesque', sans-serif; font-size: 15px; font-weight: 700; color: var(--accent); }
-.sg-date  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.sg-order { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid var(--border); }
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Stagger each card */
+.store-group:nth-child(1) { animation-delay: 0ms; }
+.store-group:nth-child(2) { animation-delay: 60ms; }
+.store-group:nth-child(3) { animation-delay: 120ms; }
+.store-group:nth-child(4) { animation-delay: 180ms; }
+
+/* Green block header — matches the PWA catalog bottom sheet */
+.sg-header {
+  padding: 11px 14px 10px;
+  background: var(--accent);
+  border-bottom: 1px solid rgba(20,83,45,0.2);
+}
+.sg-store-name {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 16px; font-weight: 800; color: #fff;
+  letter-spacing: -0.2px;
+}
+.sg-store-sub {
+  font-size: 11px; color: rgba(255,255,255,0.65);
+  margin-top: 2px; font-family: 'IBM Plex Mono', monospace;
+}
+
+.sg-order {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid var(--border);
+}
 .sg-order:last-of-type { border-bottom: none; }
 .sg-order:hover  { background: var(--s2); }
 .sg-order:active { background: var(--s3); }
 .sg-op    { font-size: 13px; font-weight: 700; color: var(--text); }
 .sg-items { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.sg-arr   { color: var(--accent); font-size: 16px; font-weight: 700; }
-.sg-both  { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; cursor: pointer; background: var(--accentd); border-top: 1px solid rgba(20,83,45,0.25); color: var(--accent); font-size: 13px; font-weight: 700; transition: background 0.12s; }
-.sg-both:hover  { background: rgba(20,83,45,0.16); }
-.sg-both:active { opacity: 0.8; }
+.sg-arr   { color: var(--accent); font-size: 18px; font-weight: 700; transition: transform 0.15s; }
+.sg-order:hover .sg-arr { transform: translateX(2px); }
 
-.paste-toggle { text-align: center; padding: 10px 0 2px; font-size: 12px; color: var(--muted); cursor: pointer; border-top: 1px solid var(--border); margin-top: 10px; user-select: none; }
+.sg-both {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 14px; cursor: pointer;
+  background: var(--accentd); border-top: 1px solid rgba(20,83,45,0.15);
+  color: var(--accent); font-size: 13px; font-weight: 700;
+  transition: background 0.12s, transform 0.1s;
+  font-family: 'Outfit', sans-serif;
+}
+.sg-both:hover  { background: rgba(20,83,45,0.16); }
+.sg-both:active { transform: scale(0.98); opacity: 0.85; }
+
+/* ── PASTE ── */
+.paste-toggle {
+  text-align: center; padding: 10px 0 2px;
+  font-size: 12px; color: var(--muted); cursor: pointer;
+  border-top: 1px solid var(--border); margin-top: 10px;
+  user-select: none; transition: color 0.15s;
+}
 .paste-toggle:hover { color: var(--accent); }
 .paste-body { display: none; margin-top: 10px; }
-.paste-body.open { display: block; }
+.paste-body.open { display: block; animation: fadeDown 0.2s ease; }
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
+/* ── PREVIEW TABLE ── */
 .preview-wrap { max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
 .preview-head, .preview-row { display: grid; grid-template-columns: 1fr 52px 52px; padding: 7px 10px; gap: 6px; align-items: center; }
 .preview-head { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--s2); }
-.preview-row  { border-bottom: 1px solid var(--border); background: var(--s1); }
+.preview-row  { border-bottom: 1px solid var(--border); background: var(--s1); transition: background 0.1s; }
 .preview-row:last-child { border-bottom: none; }
 .preview-row:nth-child(even) { background: var(--s2); }
 .pr-item  { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); }
 .pr-order { text-align: center; font-weight: 700; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
-.pr-qoh   { text-align: center; font-weight: 700; color: var(--blue); font-family: 'IBM Plex Mono', monospace; }
+.pr-qoh   { text-align: center; font-weight: 700; color: var(--blue);   font-family: 'IBM Plex Mono', monospace; }
 .preview-head div:nth-child(2), .preview-head div:nth-child(3) { text-align: center; }
 
+/* ── PROGRESS ── */
 .prog-bar-wrap { height: 5px; background: var(--s3); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
-.prog-bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s; width: 0%; }
+.prog-bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); width: 0%; }
 .prog-stats { display: flex; gap: 6px; margin-bottom: 10px; }
-.stat-pill { flex: 1; padding: 7px 6px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: 700; border: 1px solid; }
+.stat-pill { flex: 1; padding: 7px 6px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: 700; border: 1px solid; transition: transform 0.15s; }
+.stat-pill:hover { transform: translateY(-1px); }
 .stat-entered  { background: var(--accentd); border-color: rgba(20,83,45,0.3);  color: var(--accent); }
 .stat-skipped  { background: var(--yd);      border-color: rgba(146,64,14,0.3); color: var(--yellow); }
 .stat-notfound { background: var(--redd);    border-color: rgba(197,48,48,0.3); color: var(--red); }
 .stat-flagged  { background: var(--blued);   border-color: rgba(0,95,138,0.3);  color: var(--blue); }
-.stat-num { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 700; display: block; line-height: 1.2; }
+.stat-num { font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 800; display: block; line-height: 1.2; }
 .stat-sub { font-size: 9px; font-weight: 600; opacity: 0.8; display: block; margin-top: 1px; letter-spacing: 0.3px; }
 
+/* ── LOG ── */
 .log-wrap { height: 130px; overflow-y: auto; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
 .log-line { font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 2px 0; border-bottom: 1px solid var(--border); color: var(--muted); }
 .log-line:last-child { border-bottom: none; }
@@ -96,11 +184,27 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
 .log-line.notfound { color: var(--red); }
 .log-line.flag     { color: var(--blue); }
 
-.status-bar { padding: 8px 16px; background: var(--s1); border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+/* ── STATUS BAR ── */
+.status-bar {
+  padding: 8px 16px 6px; background: var(--s1);
+  border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s; }
 .status-dot.green  { background: var(--accent); }
 .status-dot.red    { background: var(--red); }
 .status-dot.yellow { background: var(--amber); animation: pulse 1s infinite; }
+
+/* ── FOOTER ── */
+.footer {
+  padding: 8px 16px 10px; background: var(--s1);
+  text-align: center; font-size: 10px; color: var(--muted);
+  border-top: 1px solid var(--border);
+  font-family: 'Outfit', sans-serif;
+}
+.footer span { color: var(--text2); font-weight: 600; }
+
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
 @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 .spinning { animation: spin 0.7s linear infinite; display: inline-block; }
@@ -108,7 +212,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
-/* ── SPEED ── */
+/* ── SPEED CONTROL ── */
 .speed-wrap { display: flex; gap: 6px; }
 .speed-btn {
   flex: 1; padding: 8px 4px; border-radius: 8px; border: 1px solid var(--border);
@@ -134,7 +238,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
 }
 
 .custom-inputs { display: none; margin-top: 10px; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; flex-direction: column; gap: 8px; }
-.custom-inputs.show { display: flex; }
+.custom-inputs.show { display: flex; animation: fadeDown 0.2s ease; }
 .ci-row { display: grid; grid-template-columns: 1fr 80px; align-items: center; gap: 8px; }
 .ci-label { font-size: 11px; font-weight: 600; color: var(--text2); }
 .ci-unit  { font-size: 10px; color: var(--muted); margin-top: 1px; }
@@ -142,22 +246,51 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
 .ci-input:focus { border-color: var(--amber); }
 
 /* ── STARTUP ── */
-#secStartup { position: fixed; inset: 0; z-index: 999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 40px 32px; }
-.startup-logo { font-family: 'Bricolage Grotesque', sans-serif; font-size: 14px; font-weight: 800; letter-spacing: -0.3px; color: var(--accent); margin-bottom: 40px; opacity: 0; animation: fadeUp 0.5s ease forwards 0.1s; }
+#secStartup {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0; padding: 40px 32px;
+}
+.startup-logo {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px; font-weight: 800; letter-spacing: -0.3px;
+  color: var(--accent); margin-bottom: 40px;
+  opacity: 0; animation: fadeUp 0.5s ease forwards 0.1s;
+}
 .startup-steps { width: 100%; }
-.startup-step { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); opacity: 0; transform: translateY(6px); transition: opacity 0.35s ease, transform 0.35s ease; }
+.startup-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
 .startup-step:last-child { border-bottom: none; }
 .startup-step.visible { opacity: 1; transform: translateY(0); }
-.step-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; background: var(--s2); border: 1px solid var(--border); transition: background 0.3s, border-color 0.3s; font-family: 'IBM Plex Mono', monospace; color: var(--muted); }
+.step-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 11px;
+  background: var(--s2); border: 1px solid var(--border);
+  transition: background 0.3s, border-color 0.3s;
+  font-family: 'IBM Plex Mono', monospace; color: var(--muted);
+}
 .step-icon.spinning-ring { border-color: var(--accent); border-top-color: transparent; animation: spinRing 0.7s linear infinite; }
 .step-icon.done   { background: var(--accentd); border-color: rgba(20,83,45,0.4);  color: var(--accent); }
 .step-icon.error  { background: var(--redd);    border-color: rgba(197,48,48,0.4); color: var(--red); }
 .step-icon.update { background: var(--yd);      border-color: rgba(146,64,14,0.4); color: var(--yellow); }
-.step-label { font-size: 13px; font-weight: 700; color: var(--text); }
-.step-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; min-height: 15px; }
+.step-label { font-size: 13px; font-weight: 700; color: var(--text); font-family: 'Outfit', sans-serif; }
+.step-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; min-height: 15px; font-family: 'Outfit', sans-serif; }
 
 /* ── UPDATE ── */
-#secUpdate { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px; gap: 0; }
+#secUpdate {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 28px; gap: 0;
+}
 #secUpdate.show { display: flex; }
 .upd-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--yd); border: 1.5px solid rgba(146,64,14,0.4); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 20px; color: var(--yellow); font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; opacity: 0; animation: fadeUp 0.4s ease forwards 0.05s; }
 .upd-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; text-align: center; opacity: 0; animation: fadeUp 0.4s ease forwards 0.1s; }
@@ -176,6 +309,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
 </head>
 <body>
 
+<!-- STARTUP -->
 <div id="secStartup">
   <div class="startup-logo">Project: Herald</div>
   <div class="startup-steps">
@@ -194,6 +328,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
   </div>
 </div>
 
+<!-- UPDATE -->
 <div id="secUpdate">
   <div class="upd-icon">↑</div>
   <div class="upd-title" id="updTitle">Update Available</div>
@@ -208,10 +343,13 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
   <div class="upd-copy-hint" id="updCopyHint">tap to open in new tab</div>
 </div>
 
+<!-- HEADER -->
 <div class="header">
   <div class="header-logo">
-    <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
-      <path d="M18 3L6 9H3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3l12 6V3z"/>
+    <!-- Herald horn — matches phone app icon -->
+    <svg viewBox="0 0 32 32" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+      <path d="M26 4L8 12H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4l18 8V4z" fill="white"/>
+      <rect x="7.5" y="12" width="1.5" height="8" rx="0.5" fill="rgba(20,83,45,0.4)"/>
     </svg>
   </div>
   <div class="header-title">Project: Herald <span id="versionBadge" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:var(--muted);margin-left:4px"></span></div>
@@ -219,34 +357,36 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
   <button id="devTriggerBtn" style="padding:3px 8px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:'Outfit',sans-serif">DEV</button>
 </div>
 
+<!-- DEV MODE -->
 <div id="devOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(241,246,242,0.96);backdrop-filter:blur(6px);flex-direction:column;padding:20px 16px;overflow-y:auto">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--amber)">Dev Mode</div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--amber);font-family:'Outfit',sans-serif">Dev Mode</div>
     <button id="devCloseBtn" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Close</button>
   </div>
-  <div style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5">Tests run the real code with synthetic data — not mocks.</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5;font-family:'Outfit',sans-serif">Tests run the real code with synthetic data — not mocks.</div>
   <div style="display:flex;flex-direction:column;gap:10px">
     <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px">
       <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Email Receipt</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Injects a fake completed order, calls the real sendCompletionEmail(). Check sarniapetvalu@gmail.com.</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;font-family:'Outfit',sans-serif">Injects a fake completed order, calls the real sendCompletionEmail(). Check sarniapetvalu@gmail.com.</div>
       <button id="devEmailBtn" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Email Test</button>
-      <div id="devEmailStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center"></div>
+      <div id="devEmailStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center;font-family:'Outfit',sans-serif"></div>
     </div>
     <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px">
       <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Drive Upload</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Uploads a test JSON + CSV to Google Drive using the real upload path. Check the Drive folder.</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;font-family:'Outfit',sans-serif">Uploads a test JSON + CSV to Google Drive using the real upload path.</div>
       <button id="devDriveBtn" style="width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Drive Test</button>
-      <div id="devDriveStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center"></div>
+      <div id="devDriveStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center;font-family:'Outfit',sans-serif"></div>
     </div>
     <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px">
       <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Update Check</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Forces a fresh update check against Vercel, same as startup does.</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;font-family:'Outfit',sans-serif">Forces a fresh update check against Vercel, same as startup does.</div>
       <button id="devUpdateBtn" style="width:100%;padding:11px;background:var(--s2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Update Check</button>
-      <div id="devUpdateStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center"></div>
+      <div id="devUpdateStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center;font-family:'Outfit',sans-serif"></div>
     </div>
   </div>
 </div>
 
+<!-- DRIVE PICKER -->
 <div class="section" id="secDrive">
   <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <span>This Week's Orders</span>
@@ -258,6 +398,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
     <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Loading from Drive...</div>
   </div>
 
+  <!-- Speed -->
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
     <div class="section-label" style="margin-bottom:8px">Input Speed</div>
     <div class="speed-wrap">
@@ -294,6 +435,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
   </div>
 </div>
 
+<!-- PREVIEW -->
 <div class="section" id="secPreview" style="display:none">
   <div class="section-label">Order Preview — <span id="previewCount">0</span> items</div>
   <div class="preview-wrap">
@@ -304,6 +446,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
   <button class="btn btn-outline" id="btnClear">Clear</button>
 </div>
 
+<!-- PROGRESS -->
 <div class="section" id="secProgress" style="display:none">
   <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
     <span>Progress — <span id="progLabel">0 / 0</span></span>
@@ -320,6 +463,7 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
   <button class="btn btn-red" id="btnStop" style="margin-top:10px">Stop Bot</button>
 </div>
 
+<!-- COMPLETE -->
 <div class="section" id="secComplete" style="display:none">
   <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
     <span>Complete</span>
@@ -339,6 +483,8 @@ body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Ou
   <div class="status-dot" id="statusDot"></div>
   <span id="statusText">Select an order from Drive or open the portal</span>
 </div>
+
+<div class="footer">made by <span>Ketan Vashisht</span></div>
 
 <script src="popup.js"></script>
 </body>

@@ -274,12 +274,13 @@ async function loadDriveOrders() {
         </div>`
       ).join('');
       const bothBtn = g.orders.length >= 2
-        ? `<div class="sg-both" data-gi="${gi}" data-both="1">⚡ Load Both Together</div>`
+        ? `<div class="sg-both" data-gi="${gi}" data-both="1">Load Both Together</div>`
         : '';
+      const storeNum = storeLabel(g.store).match(/#\d+/)?.[0] || '';
       return `<div class="store-group">
         <div class="sg-header">
-          <div class="sg-store">${storeLabel(g.store)}</div>
-          <div class="sg-date">${dateLabel}</div>
+          <div class="sg-store-name">${storeLabelPlain(g.store)}</div>
+          <div class="sg-store-sub">${storeNum} &nbsp;·&nbsp; ${dateLabel}</div>
         </div>
         ${orderRows}
         ${bothBtn}
