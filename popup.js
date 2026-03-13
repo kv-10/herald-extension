@@ -162,6 +162,12 @@ function updateOverwriteLabel() {
   const thumb = document.getElementById('ciOverwriteThumb');
   if (track) track.style.background  = _overwriteMode ? 'var(--accent)' : 'var(--s3)';
   if (thumb) thumb.style.transform   = _overwriteMode ? 'translateX(16px)' : 'translateX(0)';
+  // Grey out After Clear when overwrite mode is on — it has no effect
+  const clearRow = document.getElementById('ciClearRow');
+  if (clearRow) {
+    clearRow.style.opacity      = _overwriteMode ? '0.35' : '1';
+    clearRow.style.pointerEvents = _overwriteMode ? 'none' : '';
+  }
 }
 
 function saveSpeedPrefs() {
@@ -336,7 +342,7 @@ function renderGroups(groups) {
     return `<div class="store-group">
       <div class="sg-header">
         <div class="sg-store-name">${storeLabelPlain(g.store)}</div>
-        <div class="sg-store-sub">${storeNum} &nbsp;·&nbsp; ${dateLabel}${totalStr}</div>
+        <div class="sg-store-sub" id="sg-sub-${gi}">${storeNum} &nbsp;·&nbsp; ${dateLabel}${totalStr}</div>
       </div>
       ${orderRows}
       ${bothBtn}
@@ -353,7 +359,7 @@ function renderGroups(groups) {
   list.querySelectorAll('[data-both]').forEach(el => {
     el.addEventListener('click', () => {
       const g = groups[+el.dataset.gi];
-      loadBothFromDrive(g.orders);
+      loadBothFromDrive(g.orders, +el.dataset.gi);
     });
   });
 }
@@ -378,8 +384,10 @@ async function backfillItemCounts(groups) {
         const dateLabel  = g.orders.length === 2 && g.orders[0].dateStr !== g.orders[1].dateStr
           ? `${formatDate(g.orders[0].dateStr)} – ${formatDate(g.orders[1].dateStr)}`
           : formatDate(g.orders[g.orders.length - 1].dateStr);
-        const subEl = document.querySelector(`.store-group:nth-child(${gi+1}) .sg-store-sub`);
-        if (subEl) subEl.innerHTML = `${storeNum} &nbsp;·&nbsp; ${dateLabel} &nbsp;·&nbsp; <span class="sg-total">${totalItems} items</span>`;
+        const subEl = document.getElementById(`sg-sub-${gi}`);
+        // Show ~ prefix when multiple orders (sum may overcount duplicates)
+        const countPrefix = g.orders.length >= 2 ? '~' : '';
+        if (subEl) subEl.innerHTML = `${storeNum} &nbsp;·&nbsp; ${dateLabel} &nbsp;·&nbsp; <span class="sg-total">${countPrefix}${totalItems} items</span>`;
       }
     } catch(e) { /* silent — counts just won't show */ }
   }));
@@ -429,7 +437,7 @@ async function loadFromDrive(fileId, filename) {
   }
 }
 
-async function loadBothFromDrive(orders) {
+async function loadBothFromDrive(orders, gi) {
   setStatus('yellow', 'Loading orders...');
   try {
     const [a, b] = await Promise.all(orders.map(o => fetchOrder(o.id)));
@@ -443,6 +451,14 @@ async function loadBothFromDrive(orders) {
       items: Array.from(itemMap.values())
     };
     await loadOrder(merged);
+    // Correct the store group header to show deduplicated count
+    if (gi != null) {
+      const subEl = document.getElementById(`sg-sub-${gi}`);
+      if (subEl) {
+        const span = subEl.querySelector('.sg-total');
+        if (span) span.textContent = merged.items.length + ' items'; // exact, no ~
+      }
+    }
     setStatus('green', `Loaded both: ${storeLabelPlain(merged.store)} — ${merged.items.length} items`);
   } catch(e) {
     setStatus('red', 'Failed to load orders from Drive');
@@ -522,14 +538,32 @@ function setState(patch) {
   return new Promise(res => chrome.runtime.sendMessage({ type:'SET_STATE', state:patch }, r => res(r)));
 }
 
+// ── PUSH LISTENER — background forwards every PV_PROGRESS/PV_COMPLETE instantly ──
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type !== 'PUSH_PROGRESS') return;
+  const pushed = msg.state;
+  // Ignore pushes from a different run (stale bot still finishing up)
+  if (pushed.runId && localState?.runId && pushed.runId !== localState.runId) return;
+  localState = pushed;
+  if (localState.phase === 'complete') {
+    stopPolling();
+    renderState();
+  } else if (localState.phase === 'running') {
+    updateProgressUI();
+  }
+});
+
+// Polling kept only as reconnect fallback (popup reopened mid-run)
 function startPolling() {
   if (pollInterval) return;
   pollInterval = setInterval(async () => {
+    // Only fetch state if we haven't heard a push recently — avoids redundant GET_STATE calls
+    if (localState?.phase === 'complete') { stopPolling(); renderState(); return; }
+    if (localState?.phase !== 'running')  { stopPolling(); renderState(); return; }
+    // Still running — do a single sync to catch up if popup was closed/reopened
     localState = await getState();
-    if (localState.phase === 'complete') { stopPolling(); renderState(); }
-    else if (localState.phase === 'running' && !localState.stopRequested) updateProgressUI();
-    else if (localState.phase !== 'running') { stopPolling(); renderState(); }
-  }, 600);
+    updateProgressUI();
+  }, 2000); // slow poll — pushes handle the real-time updates
 }
 function stopPolling() {
   if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -597,6 +631,7 @@ function renderState() {
   const isIdle = phase === 'idle';
   document.getElementById('driveLabelBar').style.display = isIdle ? '' : 'none';
   document.getElementById('driveOrderList').style.display = isIdle ? '' : 'none';
+  document.getElementById('driveBottom').style.display    = isIdle ? '' : 'none';
   // Section scroll: flex when not idle
   const ss = document.getElementById('sectionScroll');
   ss.style.display = isIdle ? 'none' : 'flex';
@@ -679,8 +714,9 @@ async function clearOrder() {
 async function runBot() {
   const orderData = localState?.orderData;
   if (!orderData) return;
-  await setState({ phase:'running', stopRequested:false, results:{entered:[],skipped:[],notFound:[],flagged:[]}, log:[], progress:{current:0, total:orderData.items.length} });
-  localState = await getState();
+  const runId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  await setState({ phase:'running', stopRequested:false, results:{entered:[],skipped:[],notFound:[],flagged:[]}, log:[], progress:{current:0, total:orderData.items.length}, runId });
+  localState = await getState(); // sync local immediately — clears old log before any push arrives
   renderState(); startPolling(); startTimer(); requestWakeLock();
 
   const [tab] = await chrome.tabs.query({ active:true, currentWindow:true });
@@ -691,7 +727,7 @@ async function runBot() {
   }
   try {
     await chrome.scripting.executeScript({ target:{ tabId:tab.id }, func: injectBridge });
-    await chrome.scripting.executeScript({ target:{ tabId:tab.id }, func: botScript, args:[orderData, TIMINGS()] });
+    await chrome.scripting.executeScript({ target:{ tabId:tab.id }, func: botScript, args:[orderData, TIMINGS(), runId] });
   } catch(e) {
     setStatus('red', 'Inject failed: ' + e.message);
     await setState({ phase:'loaded' });
@@ -885,7 +921,7 @@ function injectBridge() {
 // ══════════════════════════════════════════════
 // INJECTED: bot
 // ══════════════════════════════════════════════
-async function botScript(orderData, timings) {
+async function botScript(orderData, timings, runId) {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   async function checkStop() {
@@ -894,7 +930,7 @@ async function botScript(orderData, timings) {
     });
   }
   function sendProgress(msg, current, total, kind, results) {
-    chrome.runtime.sendMessage({ type:'PV_PROGRESS', msg, current, total, kind:kind||'info', results });
+    chrome.runtime.sendMessage({ type:'PV_PROGRESS', msg, current, total, kind:kind||'info', results, runId });
   }
   function getFilterInput(label) {
     return document.querySelector(`input[aria-label="${label}"]`);
@@ -919,13 +955,14 @@ async function botScript(orderData, timings) {
     }
     return getVisibleRows();
   }
-  async function clearFilter(label) {
+  async function clearFilter(label, forceReal) {
     const input = getFilterInput(label); if (!input) return;
-    if (timings.overwriteMode) {
-      // Select-all so next setFilter overwrites instead of appending
+    // Overwrite mode only skips the clear when staying on the SAME field for the next item.
+    // Any cross-field clear (switching Item No → Sub, or end-of-item reset) must always be real.
+    if (timings.overwriteMode && !forceReal) {
+      // Select-all so next setFilter overwrites instead of appending — no dispatch needed
       input.focus();
       input.select();
-      // Don't clear value or dispatch events — next setFilter will overwrite
     } else {
       input.value = '';
       input.dispatchEvent(new Event('input', { bubbles:true }));
@@ -1051,7 +1088,7 @@ async function botScript(orderData, timings) {
     let usedSub = false;
     if (!targetRow) {
       sendProgress(`${id} — not in Item No, trying Substituted Item...`, i, items.length, 'info', results);
-      if (!warp) await clearFilter('Item No Filter Input');
+      if (!warp) await clearFilter('Item No Filter Input', true);
       await setFilter('Substituted Item Filter Input', id);
       rows = warp ? await waitForRows(timings.afterSubFilter || timings.afterFilter) : (await sleep(timings.afterSubFilter ?? timings.afterFilter), getVisibleRows());
       if (warp && rows.length > 0) await sleep(250);
@@ -1061,7 +1098,7 @@ async function botScript(orderData, timings) {
     if (!targetRow) {
       results.notFound.push({ item:id, order:item.order, qoh:item.qoh, reason:'Not found (checked Item No + Substituted Item)' });
       sendProgress(`${id} — NOT FOUND`, i+1, items.length, 'notfound', results);
-      await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input');
+      await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input', true);
       await sleep(timings.betweenItems); continue;
     }
     // Check Life Cycle Status — skip ROS, INOT, OOS
@@ -1074,7 +1111,7 @@ async function botScript(orderData, timings) {
     if (lifecycleReasons[lifecycle]) {
       results.skipped.push({ item:id, reason: lifecycleReasons[lifecycle] });
       sendProgress(`${id} — skipped (${lifecycleReasons[lifecycle]})`, i+1, items.length, 'skip', results);
-      await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input');
+      await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input', true);
       await sleep(timings.betweenItems); continue;
     }
     // Try AG Grid internal data first (bypasses column virtualization), fall back to DOM
@@ -1090,7 +1127,7 @@ async function botScript(orderData, timings) {
     if (calcResult.qty === null) {
       results.skipped.push({ item:id, reason: calcResult.reason });
       sendProgress(`${id} — ${calcResult.reason}`, i+1, items.length, 'skip', results);
-      await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input');
+      await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input', true);
       await sleep(timings.betweenItems); continue;
     }
     const qty = calcResult.qty;
@@ -1103,11 +1140,11 @@ async function botScript(orderData, timings) {
       results.flagged.push({ item:id, qty, reason:'Could not click/edit Qty cell' });
       sendProgress(`${id} — FLAGGED (enter ${qty} manually)`, i+1, items.length, 'flag', results);
     }
-    await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input');
+    await clearFilter(usedSub ? 'Substituted Item Filter Input' : 'Item No Filter Input', true);
     await sleep(timings.betweenItems);
   }
 
-  chrome.runtime.sendMessage({ type:'PV_COMPLETE', results });
+  chrome.runtime.sendMessage({ type:'PV_COMPLETE', results, runId });
 }
 
 // ── DEV MODE ──
