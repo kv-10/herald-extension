@@ -185,8 +185,7 @@ function storeLabel(name) {
   return num ? `${name} <span style="font-size:11px;opacity:0.7;font-weight:600">#${num}</span>` : name;
 }
 function storeLabelPlain(name) {
-  const num = STORE_NUMBERS[name];
-  return num ? `${name} #${num}` : name;
+  return name; // store# shown only in sub-line, not the header title
 }
 
 function parseFilename(name) {
@@ -246,6 +245,83 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function renderGroups(groups) {
+  const list = document.getElementById('driveOrderList');
+  list.innerHTML = groups.map((g, gi) => {
+    const dateLabel = g.orders.length === 2 && g.orders[0].dateStr !== g.orders[1].dateStr
+      ? `${formatDate(g.orders[0].dateStr)} – ${formatDate(g.orders[1].dateStr)}`
+      : formatDate(g.orders[g.orders.length - 1].dateStr);
+    // Store# only in sub-line, not in the heading
+    const storeNum = storeLabel(g.store).match(/#\d+/)?.[0] || '';
+    const totalItems = g.orders.reduce((s, o) => s + (o.itemCount ?? 0), 0);
+    const hasCounts  = g.orders.some(o => o.itemCount != null);
+    const totalStr   = hasCounts ? ` &nbsp;·&nbsp; <span class="sg-total">${totalItems} items</span>` : '';
+    const orderRows = g.orders.map((o, oi) => {
+      const cntStr = o.itemCount != null
+        ? ` &nbsp;<span class="sg-cnt">${o.itemCount} items</span>` : '';
+      return `<div class="sg-order" data-gi="${gi}" data-oi="${oi}">
+        <div>
+          <div class="sg-op">${o.operator}</div>
+          <div class="sg-meta">${formatDate(o.dateStr)}${cntStr}</div>
+        </div>
+        <div class="sg-arr">›</div>
+      </div>`;
+    }).join('');
+    const bothBtn = g.orders.length >= 2
+      ? `<div class="sg-both" data-gi="${gi}" data-both="1">Load Both Together</div>`
+      : '';
+    return `<div class="store-group">
+      <div class="sg-header">
+        <div class="sg-store-name">${storeLabelPlain(g.store)}</div>
+        <div class="sg-store-sub">${storeNum} &nbsp;·&nbsp; ${dateLabel}${totalStr}</div>
+      </div>
+      ${orderRows}
+      ${bothBtn}
+    </div>`;
+  }).join('');
+  // Wire up listeners
+  list.querySelectorAll('.sg-order').forEach(el => {
+    el.addEventListener('click', () => {
+      const g = groups[+el.dataset.gi];
+      const o = g.orders[+el.dataset.oi];
+      loadFromDrive(o.id, o.name);
+    });
+  });
+  list.querySelectorAll('[data-both]').forEach(el => {
+    el.addEventListener('click', () => {
+      const g = groups[+el.dataset.gi];
+      loadBothFromDrive(g.orders);
+    });
+  });
+}
+
+async function backfillItemCounts(groups) {
+  // Fetch all JSON files in parallel, update counts in place
+  const allOrders = groups.flatMap((g, gi) => g.orders.map((o, oi) => ({ g, gi, o, oi })));
+  // Only fetch JSON files (not CSV duplicates)
+  const jsonOrders = allOrders.filter(({ o }) => o.name && o.name.endsWith('.json'));
+  await Promise.all(jsonOrders.map(async ({ g, gi, o, oi }) => {
+    try {
+      const content = await fetchOrder(o.id);
+      o.itemCount = content.items?.length ?? 0;
+      // Update the specific DOM node
+      const el = document.querySelector(`[data-gi="${gi}"][data-oi="${oi}"] .sg-meta`);
+      if (el) el.innerHTML = `${formatDate(o.dateStr)} &nbsp;<span class="sg-cnt">${o.itemCount} items</span>`;
+      // Update header total
+      const totalItems = g.orders.reduce((s, x) => s + (x.itemCount ?? 0), 0);
+      const hasCounts  = g.orders.some(x => x.itemCount != null);
+      if (hasCounts) {
+        const storeNum   = storeLabel(g.store).match(/#\d+/)?.[0] || '';
+        const dateLabel  = g.orders.length === 2 && g.orders[0].dateStr !== g.orders[1].dateStr
+          ? `${formatDate(g.orders[0].dateStr)} – ${formatDate(g.orders[1].dateStr)}`
+          : formatDate(g.orders[g.orders.length - 1].dateStr);
+        const subEl = document.querySelector(`.store-group:nth-child(${gi+1}) .sg-store-sub`);
+        if (subEl) subEl.innerHTML = `${storeNum} &nbsp;·&nbsp; ${dateLabel} &nbsp;·&nbsp; <span class="sg-total">${totalItems} items</span>`;
+      }
+    } catch(e) { /* silent — counts just won't show */ }
+  }));
+}
+
 async function loadDriveOrders() {
   const list = document.getElementById('driveOrderList');
   const icon = document.getElementById('refreshIcon');
@@ -260,50 +336,10 @@ async function loadDriveOrders() {
       return;
     }
     const groups = groupOrders(data.files.filter(f => !f.name.startsWith('CATALOG_')));
-    list.innerHTML = groups.map((g, gi) => {
-      const dateLabel = g.orders.length === 2 && g.orders[0].dateStr !== g.orders[1].dateStr
-        ? `${formatDate(g.orders[0].dateStr)} – ${formatDate(g.orders[1].dateStr)}`
-        : formatDate(g.orders[g.orders.length - 1].dateStr);
-      // Fetch item counts from cached file metadata if available (fallback: unknown)
-      const orderRows = g.orders.map((o, oi) =>
-        `<div class="sg-order" data-gi="${gi}" data-oi="${oi}">
-          <div>
-            <div class="sg-op">${o.operator}</div>
-            <div class="sg-items">${formatDate(o.dateStr)}${o.itemCount != null ? ` &nbsp;·&nbsp; <span style="color:var(--accent);font-weight:700">${o.itemCount} items</span>` : ''}</div>
-          </div>
-          <div class="sg-arr">›</div>
-        </div>`
-      ).join('');
-      const totalItems = g.orders.reduce((s, o) => s + (o.itemCount ?? 0), 0);
-      const totalStr = g.orders.some(o => o.itemCount != null)
-        ? ` &nbsp;·&nbsp; ${totalItems} items total` : '';
-      const storeNum = storeLabel(g.store).match(/#\d+/)?.[0] || '';
-      const bothBtn = g.orders.length >= 2
-        ? `<div class="sg-both" data-gi="${gi}" data-both="1">Load Both Together</div>`
-        : '';
-      return `<div class="store-group">
-        <div class="sg-header">
-          <div class="sg-store-name">${storeLabelPlain(g.store)}</div>
-          <div class="sg-store-sub">${storeNum} &nbsp;·&nbsp; ${dateLabel}${totalStr}</div>
-        </div>
-        ${orderRows}
-        ${bothBtn}
-      </div>`;
-    }).join('');
-    // Wire up listeners
-    list.querySelectorAll('.sg-order').forEach(el => {
-      el.addEventListener('click', () => {
-        const g = groups[+el.dataset.gi];
-        const o = g.orders[+el.dataset.oi];
-        loadFromDrive(o.id, o.name);
-      });
-    });
-    list.querySelectorAll('[data-both]').forEach(el => {
-      el.addEventListener('click', () => {
-        const g = groups[+el.dataset.gi];
-        loadBothFromDrive(g.orders);
-      });
-    });
+    // Render immediately without item counts
+    renderGroups(groups);
+    // Then backfill item counts in background
+    backfillItemCounts(groups);
   } catch(e) {
     console.error('[PV] loadDriveOrders error:', e);
     list.innerHTML = `<div style="text-align:center;padding:16px;color:var(--red);font-size:12px">Error: ${e.message}</div>`;
