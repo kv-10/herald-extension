@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project: Herald</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #f1f6f2;
+  --s1:     #ffffff;
+  --s2:     #e8f0ea;
+  --s3:     #d3e5d8;
+  --border: #bdd4c3;
+  --accent: #14532d;
+  --accentd:rgba(20,83,45,0.10);
+  --blue:   #005f8a;
+  --blued:  rgba(0,95,138,0.10);
+  --red:    #c53030;
+  --redd:   rgba(197,48,48,0.09);
+  --purple: #7c3aed;
+  --purpled:rgba(124,58,237,0.10);
+  --amber:  #b45309;
+  --amberd: rgba(180,83,9,0.10);
+  --yellow: #92400e;
+  --yd:     rgba(146,64,14,0.10);
+  --text:   #0a1c10;
+  --text2:  #2d5c3e;
+  --muted:  #6e9e7e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { width: 380px; background: var(--bg); color: var(--text); font-family: 'Outfit', system-ui, sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+.header { padding: 12px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; background: var(--s1); }
+.header-logo { width: 22px; height: 22px; flex-shrink: 0; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.header-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 14px; font-weight: 800; color: var(--text); flex: 1; letter-spacing: -0.3px; }
+.header-store { font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accentd); border: 1px solid rgba(20,83,45,0.3); border-radius: 20px; padding: 2px 10px; font-family: 'IBM Plex Mono', monospace; }
+
+.section { padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 10px; }
+.btn { width: 100%; padding: 11px; border-radius: 10px; border: none; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.12s; }
+.btn:active { opacity: 0.85; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-accent  { background: var(--accent); color: #fff; }
+.btn-outline { background: var(--s1); border: 1px solid var(--border); color: var(--text2); margin-top: 8px; }
+.btn-red     { background: var(--redd); border: 1px solid var(--red); color: var(--red); margin-top: 8px; }
+
+.store-group { background: var(--s1); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+.store-group:last-child { margin-bottom: 0; }
+.sg-header { padding: 11px 14px 8px; border-bottom: 1px solid var(--border); }
+.sg-store { font-family: 'Bricolage Grotesque', sans-serif; font-size: 15px; font-weight: 700; color: var(--accent); }
+.sg-date  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.sg-order { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid var(--border); }
+.sg-order:last-of-type { border-bottom: none; }
+.sg-order:hover  { background: var(--s2); }
+.sg-order:active { background: var(--s3); }
+.sg-op    { font-size: 13px; font-weight: 700; color: var(--text); }
+.sg-items { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.sg-arr   { color: var(--accent); font-size: 16px; font-weight: 700; }
+.sg-both  { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; cursor: pointer; background: var(--accentd); border-top: 1px solid rgba(20,83,45,0.25); color: var(--accent); font-size: 13px; font-weight: 700; transition: background 0.12s; }
+.sg-both:hover  { background: rgba(20,83,45,0.16); }
+.sg-both:active { opacity: 0.8; }
+
+.paste-toggle { text-align: center; padding: 10px 0 2px; font-size: 12px; color: var(--muted); cursor: pointer; border-top: 1px solid var(--border); margin-top: 10px; user-select: none; }
+.paste-toggle:hover { color: var(--accent); }
+.paste-body { display: none; margin-top: 10px; }
+.paste-body.open { display: block; }
+
+.preview-wrap { max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+.preview-head, .preview-row { display: grid; grid-template-columns: 1fr 52px 52px; padding: 7px 10px; gap: 6px; align-items: center; }
+.preview-head { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--s2); }
+.preview-row  { border-bottom: 1px solid var(--border); background: var(--s1); }
+.preview-row:last-child { border-bottom: none; }
+.preview-row:nth-child(even) { background: var(--s2); }
+.pr-item  { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); }
+.pr-order { text-align: center; font-weight: 700; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
+.pr-qoh   { text-align: center; font-weight: 700; color: var(--blue); font-family: 'IBM Plex Mono', monospace; }
+.preview-head div:nth-child(2), .preview-head div:nth-child(3) { text-align: center; }
+
+.prog-bar-wrap { height: 5px; background: var(--s3); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+.prog-bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s; width: 0%; }
+.prog-stats { display: flex; gap: 6px; margin-bottom: 10px; }
+.stat-pill { flex: 1; padding: 7px 6px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: 700; border: 1px solid; }
+.stat-entered  { background: var(--accentd); border-color: rgba(20,83,45,0.3);  color: var(--accent); }
+.stat-skipped  { background: var(--yd);      border-color: rgba(146,64,14,0.3); color: var(--yellow); }
+.stat-notfound { background: var(--redd);    border-color: rgba(197,48,48,0.3); color: var(--red); }
+.stat-flagged  { background: var(--blued);   border-color: rgba(0,95,138,0.3);  color: var(--blue); }
+.stat-num { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 700; display: block; line-height: 1.2; }
+.stat-sub { font-size: 9px; font-weight: 600; opacity: 0.8; display: block; margin-top: 1px; letter-spacing: 0.3px; }
+
+.log-wrap { height: 130px; overflow-y: auto; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+.log-line { font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 2px 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+.log-line:last-child { border-bottom: none; }
+.log-line.ok       { color: var(--accent); }
+.log-line.skip     { color: var(--yellow); }
+.log-line.notfound { color: var(--red); }
+.log-line.flag     { color: var(--blue); }
+
+.status-bar { padding: 8px 16px; background: var(--s1); border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.status-dot.green  { background: var(--accent); }
+.status-dot.red    { background: var(--red); }
+.status-dot.yellow { background: var(--amber); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+@keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.spinning { animation: spin 0.7s linear infinite; display: inline-block; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── SPEED ── */
+.speed-wrap { display: flex; gap: 6px; }
+.speed-btn {
+  flex: 1; padding: 8px 4px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--s1); color: var(--muted); font-family: 'Outfit', sans-serif;
+  font-size: 11px; font-weight: 700; cursor: pointer; text-align: center;
+  transition: all 0.15s; position: relative; overflow: hidden;
+}
+.speed-btn:hover { border-color: var(--accent); color: var(--text); background: var(--s2); }
+.speed-btn.active-normal { background: var(--accentd); border-color: rgba(20,83,45,0.4);  color: var(--accent); }
+.speed-btn.active-fast   { background: var(--redd);    border-color: rgba(197,48,48,0.4); color: var(--red); }
+.speed-btn.active-custom { background: var(--amberd);  border-color: rgba(180,83,9,0.4);  color: var(--amber); }
+.speed-btn.active-warp   { background: var(--purpled); border-color: rgba(124,58,237,0.4);color: var(--purple); }
+
+@keyframes flameSweep {
+  0%   { transform: translateX(-100%) skewX(-12deg); opacity: 0.9; }
+  100% { transform: translateX(220%)  skewX(-12deg); opacity: 0; }
+}
+.flame-sweep::after {
+  content: ''; position: absolute; top: 0; left: 0; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), rgba(167,139,250,0.5), transparent);
+  animation: flameSweep 0.55s cubic-bezier(0.4,0,0.2,1) forwards;
+  pointer-events: none;
+}
+
+.custom-inputs { display: none; margin-top: 10px; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; flex-direction: column; gap: 8px; }
+.custom-inputs.show { display: flex; }
+.ci-row { display: grid; grid-template-columns: 1fr 80px; align-items: center; gap: 8px; }
+.ci-label { font-size: 11px; font-weight: 600; color: var(--text2); }
+.ci-unit  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.ci-input { width: 100%; padding: 5px 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--s2); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; text-align: right; outline: none; transition: border-color 0.15s; }
+.ci-input:focus { border-color: var(--amber); }
+
+/* ── STARTUP ── */
+#secStartup { position: fixed; inset: 0; z-index: 999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 40px 32px; }
+.startup-logo { font-family: 'Bricolage Grotesque', sans-serif; font-size: 14px; font-weight: 800; letter-spacing: -0.3px; color: var(--accent); margin-bottom: 40px; opacity: 0; animation: fadeUp 0.5s ease forwards 0.1s; }
+.startup-steps { width: 100%; }
+.startup-step { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); opacity: 0; transform: translateY(6px); transition: opacity 0.35s ease, transform 0.35s ease; }
+.startup-step:last-child { border-bottom: none; }
+.startup-step.visible { opacity: 1; transform: translateY(0); }
+.step-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; background: var(--s2); border: 1px solid var(--border); transition: background 0.3s, border-color 0.3s; font-family: 'IBM Plex Mono', monospace; color: var(--muted); }
+.step-icon.spinning-ring { border-color: var(--accent); border-top-color: transparent; animation: spinRing 0.7s linear infinite; }
+.step-icon.done   { background: var(--accentd); border-color: rgba(20,83,45,0.4);  color: var(--accent); }
+.step-icon.error  { background: var(--redd);    border-color: rgba(197,48,48,0.4); color: var(--red); }
+.step-icon.update { background: var(--yd);      border-color: rgba(146,64,14,0.4); color: var(--yellow); }
+.step-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.step-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; min-height: 15px; }
+
+/* ── UPDATE ── */
+#secUpdate { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px; gap: 0; }
+#secUpdate.show { display: flex; }
+.upd-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--yd); border: 1.5px solid rgba(146,64,14,0.4); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 20px; color: var(--yellow); font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; opacity: 0; animation: fadeUp 0.4s ease forwards 0.05s; }
+.upd-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; text-align: center; opacity: 0; animation: fadeUp 0.4s ease forwards 0.1s; }
+.upd-version { font-size: 12px; font-weight: 700; color: var(--yellow); background: var(--yd); border: 1px solid rgba(146,64,14,0.3); border-radius: 20px; padding: 3px 12px; margin-bottom: 28px; font-family: 'IBM Plex Mono', monospace; opacity: 0; animation: fadeUp 0.4s ease forwards 0.15s; }
+.upd-divider { width: 100%; height: 1px; background: var(--border); margin-bottom: 24px; opacity: 0; animation: fadeUp 0.4s ease forwards 0.2s; }
+.upd-instruction { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; margin-bottom: 20px; opacity: 0; animation: fadeUp 0.4s ease forwards 0.22s; }
+.upd-instruction strong { color: var(--text); font-weight: 700; }
+.upd-url-box { width: 100%; background: var(--s1); border: 1px solid rgba(20,83,45,0.4); border-radius: 10px; padding: 12px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); text-align: center; margin-bottom: 10px; cursor: pointer; transition: background 0.15s; opacity: 0; animation: fadeUp 0.4s ease forwards 0.27s; word-break: break-all; text-decoration: none; display: block; }
+.upd-url-box:active { background: var(--s2); }
+.upd-copy-hint { font-size: 10px; color: var(--muted); text-align: center; opacity: 0; animation: fadeUp 0.4s ease forwards 0.32s; }
+.upd-copy-hint.copied { color: var(--accent); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spinRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="secStartup">
+  <div class="startup-logo">Project: Herald</div>
+  <div class="startup-steps">
+    <div class="startup-step" id="stepInit">
+      <div class="step-icon" id="stepInitIcon">···</div>
+      <div class="step-text"><div class="step-label">Initializing</div><div class="step-sub" id="stepInitSub">Starting up...</div></div>
+    </div>
+    <div class="startup-step" id="stepUpdate">
+      <div class="step-icon" id="stepUpdateIcon">···</div>
+      <div class="step-text"><div class="step-label">Update Check</div><div class="step-sub" id="stepUpdateSub">Waiting...</div></div>
+    </div>
+    <div class="startup-step" id="stepReady">
+      <div class="step-icon" id="stepReadyIcon">···</div>
+      <div class="step-text"><div class="step-label">Ready</div><div class="step-sub" id="stepReadySub">Preparing...</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="secUpdate">
+  <div class="upd-icon">↑</div>
+  <div class="upd-title" id="updTitle">Update Available</div>
+  <div class="upd-version" id="updVersion"></div>
+  <div class="upd-divider"></div>
+  <div class="upd-instruction">
+    <strong>1.</strong> Tap the link below to open the installer<br>
+    <strong>2.</strong> Click Install Extension, then <strong>close this sidebar</strong><br>
+    <strong>3.</strong> Click <strong>Add</strong> on the Firefox prompt
+  </div>
+  <a class="upd-url-box" id="updUrlBox" href="https://petvalu-bot.vercel.app" target="_blank">petvalu-bot.vercel.app</a>
+  <div class="upd-copy-hint" id="updCopyHint">tap to open in new tab</div>
+</div>
+
+<div class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+      <path d="M18 3L6 9H3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3l12 6V3z"/>
+    </svg>
+  </div>
+  <div class="header-title">Project: Herald <span id="versionBadge" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:var(--muted);margin-left:4px"></span></div>
+  <div class="header-store" id="headerStore" style="display:none"></div>
+  <button id="devTriggerBtn" style="padding:3px 8px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:'Outfit',sans-serif">DEV</button>
+</div>
+
+<div id="devOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(241,246,242,0.96);backdrop-filter:blur(6px);flex-direction:column;padding:20px 16px;overflow-y:auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--amber)">Dev Mode</div>
+    <button id="devCloseBtn" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Close</button>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5">Tests run the real code with synthetic data — not mocks.</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px">
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Email Receipt</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Injects a fake completed order, calls the real sendCompletionEmail(). Check sarniapetvalu@gmail.com.</div>
+      <button id="devEmailBtn" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Email Test</button>
+      <div id="devEmailStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center"></div>
+    </div>
+    <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px">
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Drive Upload</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Uploads a test JSON + CSV to Google Drive using the real upload path. Check the Drive folder.</div>
+      <button id="devDriveBtn" style="width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Drive Test</button>
+      <div id="devDriveStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center"></div>
+    </div>
+    <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px">
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Update Check</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Forces a fresh update check against Vercel, same as startup does.</div>
+      <button id="devUpdateBtn" style="width:100%;padding:11px;background:var(--s2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Update Check</button>
+      <div id="devUpdateStatus" style="font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;text-align:center"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="secDrive">
+  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span>This Week's Orders</span>
+    <button id="btnRefresh" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px;font-family:'Outfit',sans-serif">
+      <span id="refreshIcon" style="display:inline-block">↻</span> Refresh
+    </button>
+  </div>
+  <div id="driveOrderList" style="min-height:40px">
+    <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Loading from Drive...</div>
+  </div>
+
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+    <div class="section-label" style="margin-bottom:8px">Input Speed</div>
+    <div class="speed-wrap">
+      <button class="speed-btn active-normal" id="speedNormal" data-speed="normal">Normal</button>
+      <button class="speed-btn"               id="speedFast"   data-speed="fast">Fast</button>
+      <button class="speed-btn"               id="speedCustom" data-speed="custom">Custom</button>
+      <button class="speed-btn"               id="speedWarp"   data-speed="warp">Warp <span style="font-size:9px;opacity:0.7">β</span></button>
+    </div>
+    <div class="custom-inputs" id="customInputs">
+      <div class="ci-row">
+        <div><div class="ci-label">Filter Wait</div><div class="ci-unit">ms — after search filter</div></div>
+        <input class="ci-input" id="ciFilter"  type="number" value="2500" min="500"  max="9999">
+      </div>
+      <div class="ci-row">
+        <div><div class="ci-label">After Clear</div><div class="ci-unit">ms — after field cleared</div></div>
+        <input class="ci-input" id="ciClear"   type="number" value="800"  min="0"    max="9999">
+      </div>
+      <div class="ci-row">
+        <div><div class="ci-label">After Qty</div><div class="ci-unit">ms — after qty entered</div></div>
+        <input class="ci-input" id="ciQty"     type="number" value="600"  min="100"  max="9999">
+      </div>
+      <div class="ci-row">
+        <div><div class="ci-label">Between Items</div><div class="ci-unit">ms — gap between rows</div></div>
+        <input class="ci-input" id="ciBetween" type="number" value="400"  min="50"   max="9999">
+      </div>
+    </div>
+    <div id="speedNote" style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Filter wait: 2500ms · Clear: 800ms · Qty: 600ms · Between: 400ms</div>
+  </div>
+
+  <div class="paste-toggle" id="pasteToggle">+ Enter order manually</div>
+  <div class="paste-body" id="pasteBody">
+    <textarea id="pasteArea" placeholder="Paste order JSON here..." style="width:100%;height:60px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px;resize:none;outline:none;margin-bottom:8px;"></textarea>
+    <button class="btn btn-outline" id="btnLoad" disabled style="margin-top:0">Load Pasted Order</button>
+  </div>
+</div>
+
+<div class="section" id="secPreview" style="display:none">
+  <div class="section-label">Order Preview — <span id="previewCount">0</span> items</div>
+  <div class="preview-wrap">
+    <div class="preview-head"><div>Item #</div><div>Order</div><div>On Hand</div></div>
+    <div id="previewList"></div>
+  </div>
+  <button class="btn btn-accent" id="btnRun" style="margin-top:10px">Run Order Bot</button>
+  <button class="btn btn-outline" id="btnClear">Clear</button>
+</div>
+
+<div class="section" id="secProgress" style="display:none">
+  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+    <span>Progress — <span id="progLabel">0 / 0</span></span>
+    <span id="timerDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px">0:00</span>
+  </div>
+  <div class="prog-bar-wrap"><div class="prog-bar" id="progBar"></div></div>
+  <div class="prog-stats">
+    <div class="stat-pill stat-entered"><span class="stat-num" id="statEntered">0</span>Entered<span class="stat-sub">qty set</span></div>
+    <div class="stat-pill stat-skipped"><span class="stat-num" id="statSkipped">0</span>Skipped<span class="stat-sub">not needed</span></div>
+    <div class="stat-pill stat-notfound"><span class="stat-num" id="statNotFound">0</span>Not Found<span class="stat-sub">check manually</span></div>
+    <div class="stat-pill stat-flagged"><span class="stat-num" id="statFlagged">0</span>Flagged<span class="stat-sub">enter manually</span></div>
+  </div>
+  <div class="log-wrap" id="logWrap"></div>
+  <button class="btn btn-red" id="btnStop" style="margin-top:10px">Stop Bot</button>
+</div>
+
+<div class="section" id="secComplete" style="display:none">
+  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+    <span>Complete</span>
+    <span id="timerFinal" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);background:var(--accentd);border:1px solid rgba(20,83,45,0.3);border-radius:20px;padding:2px 10px;letter-spacing:0.5px">0:00</span>
+  </div>
+  <div class="prog-stats">
+    <div class="stat-pill stat-entered"><span class="stat-num" id="doneEntered">0</span>Entered<span class="stat-sub">qty set</span></div>
+    <div class="stat-pill stat-skipped"><span class="stat-num" id="doneSkipped">0</span>Skipped<span class="stat-sub">not needed</span></div>
+    <div class="stat-pill stat-notfound"><span class="stat-num" id="doneNotFound">0</span>Not Found<span class="stat-sub">check manually</span></div>
+    <div class="stat-pill stat-flagged"><span class="stat-num" id="doneFlagged">0</span>Flagged<span class="stat-sub">enter manually</span></div>
+  </div>
+  <button class="btn btn-outline" id="btnDownloadNF" style="display:none;margin-bottom:8px">Download Issues CSV</button>
+  <button class="btn btn-accent" id="btnReset">Start New Order</button>
+</div>
+
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">Select an order from Drive or open the portal</span>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
