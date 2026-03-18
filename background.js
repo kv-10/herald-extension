@@ -56,7 +56,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     botState.phase = 'complete';
     botState.results = msg.results;
     botState.wasStopped = msg.wasStopped || false;
-    botState.log.push({ msg: '✓ Bot finished', kind: 'ok' });
+    botState.log.push({ msg: '\u2713 Bot finished', kind: 'ok' });
     chrome.runtime.sendMessage({ type: 'PUSH_PROGRESS', state: { ...botState } }).catch(() => {});
     sendResponse({ ok: true });
     return true;
