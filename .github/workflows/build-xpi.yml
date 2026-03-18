@@ -9,7 +9,11 @@ on:
       - 'background.js'
       - 'manifest.json'
       - 'gmail.js'
-      - 'icon*.png'
+      - 'icon16.png'
+      - 'icon32.png'
+      - 'icon48.png'
+      - 'icon128.png'
+      - 'icon.png'
       - 'vercel.json'
 
 jobs:
@@ -21,6 +25,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build XPI
         run: |
@@ -37,10 +43,16 @@ jobs:
             icon128.png \
             icon.png
 
-      - name: Commit updated XPI
+      - name: Commit and push XPI
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add petvalu-bot.xpi
-          git diff --cached --quiet && echo "No changes to XPI" || git commit -m "chore: rebuild petvalu-bot.xpi from source [skip ci]"
-          git push
+          if git diff --cached --quiet; then
+            echo "XPI unchanged, skipping commit"
+          else
+            git commit -m "chore: rebuild petvalu-bot.xpi [skip ci]"
+            git push origin main
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
