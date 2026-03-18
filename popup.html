@@ -86,7 +86,7 @@ body {
 }
 .dev-btn:hover { background: var(--s3); }
 
-/* ─── MAIN FILL (fills remaining height between label bar and bottom) ─── */
+/* ─── MAIN FILL ─── */
 #mainFill {
   flex: 1;
   min-height: 0;
@@ -106,7 +106,6 @@ body {
   padding: 11px 13px;
   border-bottom: 1px solid var(--border);
 }
-/* Progress + Complete fill the panel — no border, overflow must be hidden for flex:1 children */
 #secProgress, #secComplete {
   border-bottom: none;
   overflow: hidden;
@@ -119,9 +118,6 @@ body {
 }
 
 /* ─── DRIVE SECTION ─── */
-/* #secDrive removed - restructured */
-/* .drive-top removed */
-/* #driveOrderList now defined in mainFill block */
 .drive-bottom {
   flex-shrink: 0;
   padding: 8px 13px 10px;
@@ -148,7 +144,6 @@ body {
   to{opacity:1;transform:translateY(0)}
 }
 
-/* Green header — no store# repeated, only in muted sub */
 .sg-header {
   padding: 8px 11px 7px;
   background: var(--accent);
@@ -164,7 +159,6 @@ body {
 }
 .sg-total { color: rgba(255,255,255,0.85); font-weight: 700; }
 
-/* Compact order rows */
 .sg-order {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 11px; cursor: pointer;
@@ -176,7 +170,6 @@ body {
 .sg-order:active { background: var(--s3); }
 .sg-op   { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.2; }
 .sg-meta { font-size: 10px; color: var(--muted); margin-top: 1px; font-family: 'IBM Plex Mono', monospace; }
-.sg-meta .sg-cnt { color: var(--muted); font-weight: 600; }
 .sg-arr  { color: var(--accent); font-size: 15px; font-weight: 700; transition: transform 0.15s; flex-shrink: 0; }
 .sg-order:hover .sg-arr { transform: translateX(3px); }
 
@@ -203,16 +196,41 @@ body {
 .speed-btn.active-fast   { background: var(--redd);    border-color: rgba(197,48,48,0.4); color: var(--red); }
 .speed-btn.active-custom { background: var(--amberd);  border-color: rgba(180,83,9,0.4);  color: var(--amber); }
 .speed-btn.active-warp   { background: var(--purpled); border-color: rgba(124,58,237,0.4);color: var(--purple); }
-@keyframes flameSweep {
-  0%   {transform:translateX(-100%) skewX(-12deg);opacity:0.9}
-  100% {transform:translateX(220%)  skewX(-12deg);opacity:0}
+
+/* ── WARP LIGHTNING ANIMATION ── */
+@keyframes boltFlash {
+  0%   { opacity: 0; }
+  6%   { opacity: 1; }
+  14%  { opacity: 0.1; }
+  20%  { opacity: 1; }
+  30%  { opacity: 0.15; }
+  38%  { opacity: 1; }
+  50%  { opacity: 0.4; }
+  62%  { opacity: 0.9; }
+  78%  { opacity: 0; }
+  100% { opacity: 0; }
 }
-.flame-sweep::after {
-  content:''; position:absolute; top:0; left:0; width:60%; height:100%;
-  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), rgba(167,139,250,0.5), transparent);
-  animation: flameSweep 0.55s cubic-bezier(0.4,0,0.2,1) forwards;
-  pointer-events: none;
+@keyframes boltDraw {
+  0%  { stroke-dashoffset: 130; }
+  30% { stroke-dashoffset: 0; }
+  100%{ stroke-dashoffset: 0; }
 }
+@keyframes branchDraw {
+  0%,18% { stroke-dashoffset: 70; }
+  45%    { stroke-dashoffset: 0; }
+  100%   { stroke-dashoffset: 0; }
+}
+@keyframes warpGlow {
+  0%,100% { box-shadow: none; }
+  12%     { box-shadow: 0 0 14px 5px rgba(167,139,250,0.7), 0 0 28px 10px rgba(124,58,237,0.35); }
+  38%     { box-shadow: 0 0 6px 2px rgba(167,139,250,0.3); }
+  62%     { box-shadow: 0 0 10px 4px rgba(167,139,250,0.5); }
+}
+.warp-lightning {
+  animation: warpGlow 0.85s ease forwards;
+  overflow: visible !important;
+}
+
 .custom-inputs {
   display:none; margin-top:7px; background:var(--s1); border:1px solid var(--border);
   border-radius:9px; padding:8px 10px; flex-direction:column; gap:6px;
@@ -243,7 +261,6 @@ body {
 /* ─── PREVIEW TABLE ─── */
 .preview-wrap { flex:1; min-height:0; overflow-y:auto; border:1px solid var(--border); border-radius:9px; }
 
-/* Section panels fill sectionScroll and pin buttons to bottom */
 #sectionScroll {
   display: flex;
   flex-direction: column;
@@ -489,18 +506,12 @@ body {
   </div>
 </div>
 
-<!-- ═══ MAIN FILL (flex:1 — order list OR section content) ═══ -->
+<!-- ═══ MAIN FILL ═══ -->
 <div id="mainFill">
-
-  <!-- Drive order list — shown when idle -->
   <div id="driveOrderList">
     <div style="text-align:center;padding:14px;color:var(--muted);font-size:12px">Loading from Drive...</div>
   </div>
-
-  <!-- Section scroll — shown when loaded/running/complete -->
   <div id="sectionScroll" style="display:none;">
-
-    <!-- ── PREVIEW ── -->
     <div class="section" id="secPreview" style="display:none;">
       <div class="section-label">Order Preview — <span id="previewCount">0</span> items</div>
       <div class="preview-wrap">
@@ -510,8 +521,6 @@ body {
       <button class="btn btn-accent" id="btnRun" style="margin-top:8px">Run Order Bot</button>
       <button class="btn btn-outline" id="btnClear">Clear</button>
     </div>
-
-    <!-- ── PROGRESS ── -->
     <div class="section" id="secProgress" style="display:none;">
       <div class="section-label">
         <span>Progress — <span id="progLabel">0 / 0</span></span>
@@ -527,8 +536,6 @@ body {
       <div class="log-wrap" id="logWrap"></div>
       <button class="btn btn-red" id="btnStop" style="margin-top:8px;flex-shrink:0">Stop Bot</button>
     </div>
-
-    <!-- ── COMPLETE ── -->
     <div class="section" id="secComplete" style="display:none;">
       <div class="section-label">
         <span>Complete</span>
@@ -544,9 +551,8 @@ body {
       <button class="btn btn-outline" id="btnDownloadNF" style="display:none">Download Issues CSV</button>
       <button class="btn btn-accent" id="btnReset" style="margin-top:6px">Start New Order</button>
     </div>
-
-  </div><!-- /sectionScroll -->
-</div><!-- /mainFill -->
+  </div>
+</div>
 
 <!-- ═══ DRIVE BOTTOM (pinned) ═══ -->
 <div class="drive-bottom" id="driveBottom">
@@ -554,8 +560,8 @@ body {
   <div class="speed-wrap">
     <button class="speed-btn active-normal" id="speedNormal" data-speed="normal">Normal</button>
     <button class="speed-btn"               id="speedFast"   data-speed="fast">Fast</button>
+    <button class="speed-btn"               id="speedWarp"   data-speed="warp">Warp</button>
     <button class="speed-btn"               id="speedCustom" data-speed="custom">Custom</button>
-    <button class="speed-btn"               id="speedWarp"   data-speed="warp">Warp <span style="font-size:9px;opacity:0.6">β</span></button>
   </div>
   <div class="custom-inputs" id="customInputs">
     <div class="ci-row">
@@ -564,7 +570,7 @@ body {
     </div>
     <div class="ci-row" id="ciClearRow">
       <div><div class="ci-label">After Clear</div><div class="ci-unit">ms after field cleared</div></div>
-      <input class="ci-input" id="ciClear"   type="number" value="800"  min="0"    max="9999">
+      <input class="ci-input" id="ciClear"   type="number" value="800"  min="0" max="9999">
     </div>
     <div class="ci-row">
       <div><div class="ci-label">After Qty</div><div class="ci-unit">ms after qty entered</div></div>
@@ -596,7 +602,7 @@ body {
     <textarea id="pasteArea" placeholder="Paste order JSON here..." style="width:100%;height:52px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px;resize:none;outline:none;margin-bottom:6px;margin-top:6px;"></textarea>
     <button class="btn btn-outline" id="btnLoad" disabled style="margin-top:0">Load Pasted Order</button>
   </div>
-</div><!-- /drive-bottom -->
+</div>
 
 <div class="status-bar">
   <div class="status-dot" id="statusDot"></div>
