@@ -1,0 +1,46 @@
+name: Build XPI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'popup.js'
+      - 'popup.html'
+      - 'background.js'
+      - 'manifest.json'
+      - 'gmail.js'
+      - 'icon*.png'
+      - 'vercel.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build XPI
+        run: |
+          zip -j petvalu-bot.xpi \
+            manifest.json \
+            popup.html \
+            popup.js \
+            background.js \
+            gmail.js \
+            vercel.json \
+            icon16.png \
+            icon32.png \
+            icon48.png \
+            icon128.png \
+            icon.png
+
+      - name: Commit updated XPI
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add petvalu-bot.xpi
+          git diff --cached --quiet && echo "No changes to XPI" || git commit -m "chore: rebuild petvalu-bot.xpi from source [skip ci]"
+          git push
