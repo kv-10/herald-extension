@@ -1,10 +1,10 @@
 {
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/petvalu-bot.xpi",
       "headers": [
+        { "key": "Content-Type", "value": "application/x-xpinstall" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Content-Type", "value": "application/octet-stream" },
         { "key": "Cache-Control", "value": "no-store" }
       ]
     },
@@ -12,6 +12,13 @@
       "source": "/update.xml",
       "headers": [
         { "key": "Content-Type", "value": "text/xml" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Cache-Control", "value": "no-store" }
       ]
     }
