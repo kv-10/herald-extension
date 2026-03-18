@@ -23,9 +23,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract icons from files.zip
+        run: unzip -o files.zip icon16.png icon32.png icon48.png icon.png -d .
+
       - name: Build XPI
         run: |
-          ls -la
           zip -j petvalu-bot.xpi \
             manifest.json \
             popup.html \
