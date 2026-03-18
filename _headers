@@ -1,3 +1,7 @@
 /*
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET
+
+/petvalu-bot.xpi
+  Content-Type: application/x-xpinstall
+  Content-Disposition: inline
