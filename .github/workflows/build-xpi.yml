@@ -26,18 +26,21 @@ jobs:
       - name: Build XPI
         run: |
           rm -f petvalu-bot.xpi
+          # Add PNGs uncompressed (store mode) to match original XPI structure
+          zip -j -0 petvalu-bot.xpi \
+            icon16.png \
+            icon32.png \
+            icon48.png \
+            icon128.png \
+            icon.png
+          # Add JS/JSON/HTML files with compression
           zip -j petvalu-bot.xpi \
             manifest.json \
             popup.html \
             popup.js \
             background.js \
             gmail.js \
-            vercel.json \
-            icon16.png \
-            icon32.png \
-            icon48.png \
-            icon128.png \
-            icon.png
+            vercel.json
 
       - name: Commit and push XPI
         run: |
