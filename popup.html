@@ -49,7 +49,6 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
-/* ─── HEADER ─── */
 .header {
   flex-shrink: 0;
   padding: 9px 13px;
@@ -57,184 +56,59 @@ body {
   display: flex; align-items: center; gap: 9px;
   background: var(--s1);
 }
-.header-logo {
-  width: 24px; height: 24px; flex-shrink: 0;
-  border-radius: 6px; overflow: hidden;
-}
+.header-logo { width: 24px; height: 24px; flex-shrink: 0; border-radius: 6px; overflow: hidden; }
 .header-logo img { width: 100%; height: 100%; display: block; }
-.header-title {
-  font-family: 'Bricolage Grotesque', sans-serif;
-  font-size: 13px; font-weight: 800; color: var(--text); flex: 1;
-  letter-spacing: -0.2px;
-}
-.header-title .ver {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px; font-weight: 500; color: var(--muted); margin-left: 5px;
-}
-.header-store {
-  font-size: 10px; font-weight: 700; color: var(--accent);
-  background: var(--accentd); border: 1px solid rgba(20,83,45,0.3);
-  border-radius: 20px; padding: 2px 9px;
-  font-family: 'IBM Plex Mono', monospace;
-  max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.dev-btn {
-  padding: 3px 7px; background: var(--s2); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--muted); font-size: 10px; font-weight: 700;
-  cursor: pointer; flex-shrink: 0; font-family: 'Outfit', sans-serif;
-  transition: background 0.12s;
-}
+.header-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 13px; font-weight: 800; color: var(--text); flex: 1; letter-spacing: -0.2px; }
+.header-title .ver { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; color: var(--muted); margin-left: 5px; }
+.header-store { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accentd); border: 1px solid rgba(20,83,45,0.3); border-radius: 20px; padding: 2px 9px; font-family: 'IBM Plex Mono', monospace; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dev-btn { padding: 3px 7px; background: var(--s2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 10px; font-weight: 700; cursor: pointer; flex-shrink: 0; font-family: 'Outfit', sans-serif; transition: background 0.12s; }
 .dev-btn:hover { background: var(--s3); }
 
-/* ─── MAIN FILL ─── */
-#mainFill {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-#driveOrderList {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  padding: 6px 13px 6px;
-}
+#mainFill { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+#driveOrderList { flex: 1; overflow-y: auto; min-height: 0; padding: 6px 13px 6px; }
 
-/* ─── SECTION ─── */
-.section {
-  padding: 11px 13px;
-  border-bottom: 1px solid var(--border);
-}
-#secProgress, #secComplete {
-  border-bottom: none;
-  overflow: hidden;
-}
-.section-label {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1.5px; color: var(--muted); margin-bottom: 9px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
+.section { padding: 11px 13px; border-bottom: 1px solid var(--border); }
+#secProgress, #secComplete { border-bottom: none; overflow: hidden; }
+.section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 9px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 
-/* ─── DRIVE SECTION ─── */
-.drive-bottom {
-  flex-shrink: 0;
-  padding: 8px 13px 10px;
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-}
+.drive-bottom { flex-shrink: 0; padding: 8px 13px 10px; border-top: 1px solid var(--border); background: var(--bg); }
 
-/* ─── STORE GROUPS ─── */
-.store-group {
-  background: var(--s1);
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  margin-bottom: 7px;
-  overflow: hidden;
-  animation: cardIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
-}
+.store-group { background: var(--s1); border: 1px solid var(--border); border-radius: 11px; margin-bottom: 7px; overflow: hidden; animation: cardIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
 .store-group:last-child { margin-bottom: 0; }
-.store-group:nth-child(1){animation-delay:0ms}
-.store-group:nth-child(2){animation-delay:55ms}
-.store-group:nth-child(3){animation-delay:110ms}
-.store-group:nth-child(4){animation-delay:165ms}
-@keyframes cardIn {
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
-}
+.store-group:nth-child(1){animation-delay:0ms} .store-group:nth-child(2){animation-delay:55ms} .store-group:nth-child(3){animation-delay:110ms} .store-group:nth-child(4){animation-delay:165ms}
+@keyframes cardIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
-.sg-header {
-  padding: 8px 11px 7px;
-  background: var(--accent);
-}
-.sg-store-name {
-  font-family: 'Bricolage Grotesque', sans-serif;
-  font-size: 14px; font-weight: 800; color: #fff;
-  letter-spacing: -0.2px; line-height: 1.2;
-}
-.sg-store-sub {
-  font-size: 10px; color: rgba(255,255,255,0.55);
-  margin-top: 1px; font-family: 'IBM Plex Mono', monospace;
-}
+.sg-header { padding: 8px 11px 7px; background: var(--accent); }
+.sg-store-name { font-family: 'Bricolage Grotesque', sans-serif; font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -0.2px; line-height: 1.2; }
+.sg-store-sub { font-size: 10px; color: rgba(255,255,255,0.55); margin-top: 1px; font-family: 'IBM Plex Mono', monospace; }
 .sg-total { color: rgba(255,255,255,0.85); font-weight: 700; }
 
-.sg-order {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 11px; cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.12s;
-}
+.sg-order { display: flex; align-items: center; justify-content: space-between; padding: 7px 11px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
 .sg-order:last-of-type { border-bottom: none; }
-.sg-order:hover  { background: var(--s2); }
-.sg-order:active { background: var(--s3); }
-.sg-op   { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.sg-order:hover { background: var(--s2); } .sg-order:active { background: var(--s3); }
+.sg-op { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.2; }
 .sg-meta { font-size: 10px; color: var(--muted); margin-top: 1px; font-family: 'IBM Plex Mono', monospace; }
-.sg-arr  { color: var(--accent); font-size: 15px; font-weight: 700; transition: transform 0.15s; flex-shrink: 0; }
+.sg-arr { color: var(--accent); font-size: 15px; font-weight: 700; transition: transform 0.15s; flex-shrink: 0; }
 .sg-order:hover .sg-arr { transform: translateX(3px); }
 
-.sg-both {
-  display: flex; align-items: center; justify-content: center;
-  padding: 8px 11px; cursor: pointer;
-  background: var(--accentd); border-top: 1px solid rgba(20,83,45,0.15);
-  color: var(--accent); font-size: 12px; font-weight: 700;
-  transition: background 0.12s, transform 0.1s;
-}
-.sg-both:hover  { background: rgba(20,83,45,0.16); }
-.sg-both:active { transform: scale(0.98); }
+.sg-both { display: flex; align-items: center; justify-content: center; padding: 8px 11px; cursor: pointer; background: var(--accentd); border-top: 1px solid rgba(20,83,45,0.15); color: var(--accent); font-size: 12px; font-weight: 700; transition: background 0.12s, transform 0.1s; }
+.sg-both:hover { background: rgba(20,83,45,0.16); } .sg-both:active { transform: scale(0.98); }
 
-/* ─── SPEED ─── */
 .speed-wrap { display: flex; gap: 5px; }
-.speed-btn {
-  flex: 1; padding: 6px 0; border-radius: 7px; border: 1px solid var(--border);
-  background: var(--s1); color: var(--muted); font-family: 'Outfit', sans-serif;
-  font-size: 11px; font-weight: 700; cursor: pointer; text-align: center;
-  transition: all 0.15s; position: relative; overflow: hidden;
-}
+.speed-btn { flex: 1; padding: 6px 0; border-radius: 7px; border: 1px solid var(--border); background: var(--s1); color: var(--muted); font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.15s; position: relative; overflow: hidden; }
 .speed-btn:hover { border-color: var(--accent); color: var(--text); background: var(--s2); }
-.speed-btn.active-normal { background: var(--accentd); border-color: rgba(20,83,45,0.4);  color: var(--accent); }
+.speed-btn.active-normal { background: var(--accentd); border-color: rgba(20,83,45,0.4); color: var(--accent); }
 .speed-btn.active-fast   { background: var(--redd);    border-color: rgba(197,48,48,0.4); color: var(--red); }
 .speed-btn.active-custom { background: var(--amberd);  border-color: rgba(180,83,9,0.4);  color: var(--amber); }
 .speed-btn.active-warp   { background: var(--purpled); border-color: rgba(124,58,237,0.4);color: var(--purple); }
 
-/* ── WARP LIGHTNING ANIMATION ── */
-@keyframes boltFlash {
-  0%   { opacity: 0; }
-  6%   { opacity: 1; }
-  14%  { opacity: 0.1; }
-  20%  { opacity: 1; }
-  30%  { opacity: 0.15; }
-  38%  { opacity: 1; }
-  50%  { opacity: 0.4; }
-  62%  { opacity: 0.9; }
-  78%  { opacity: 0; }
-  100% { opacity: 0; }
-}
-@keyframes boltDraw {
-  0%  { stroke-dashoffset: 130; }
-  30% { stroke-dashoffset: 0; }
-  100%{ stroke-dashoffset: 0; }
-}
-@keyframes branchDraw {
-  0%,18% { stroke-dashoffset: 70; }
-  45%    { stroke-dashoffset: 0; }
-  100%   { stroke-dashoffset: 0; }
-}
-@keyframes warpGlow {
-  0%,100% { box-shadow: none; }
-  12%     { box-shadow: 0 0 14px 5px rgba(167,139,250,0.7), 0 0 28px 10px rgba(124,58,237,0.35); }
-  38%     { box-shadow: 0 0 6px 2px rgba(167,139,250,0.3); }
-  62%     { box-shadow: 0 0 10px 4px rgba(167,139,250,0.5); }
-}
-.warp-lightning {
-  animation: warpGlow 0.85s ease forwards;
-  overflow: visible !important;
-}
+@keyframes boltFlash { 0%{opacity:0}6%{opacity:1}14%{opacity:0.1}20%{opacity:1}30%{opacity:0.15}38%{opacity:1}50%{opacity:0.4}62%{opacity:0.9}78%{opacity:0}100%{opacity:0} }
+@keyframes boltDraw  { 0%{stroke-dashoffset:130}30%{stroke-dashoffset:0}100%{stroke-dashoffset:0} }
+@keyframes branchDraw{ 0%,18%{stroke-dashoffset:70}45%{stroke-dashoffset:0}100%{stroke-dashoffset:0} }
+@keyframes warpGlow  { 0%,100%{box-shadow:none}12%{box-shadow:0 0 14px 5px rgba(167,139,250,0.7),0 0 28px 10px rgba(124,58,237,0.35)}38%{box-shadow:0 0 6px 2px rgba(167,139,250,0.3)}62%{box-shadow:0 0 10px 4px rgba(167,139,250,0.5)} }
+.warp-lightning { animation: warpGlow 0.85s ease forwards; overflow: visible !important; }
 
-.custom-inputs {
-  display:none; margin-top:7px; background:var(--s1); border:1px solid var(--border);
-  border-radius:9px; padding:8px 10px; flex-direction:column; gap:6px;
-}
+.custom-inputs { display:none; margin-top:7px; background:var(--s1); border:1px solid var(--border); border-radius:9px; padding:8px 10px; flex-direction:column; gap:6px; }
 .custom-inputs.show { display:flex; animation:fadeDown 0.2s ease; }
 .ci-row { display:grid; grid-template-columns:1fr 68px; align-items:center; gap:8px; }
 .ci-label { font-size:11px; font-weight:600; color:var(--text2); }
@@ -243,14 +117,12 @@ body {
 .ci-input:focus { border-color:var(--amber); }
 #speedNote { font-size:10px; color:var(--muted); margin-top:4px; text-align:center; }
 
-/* ─── PASTE ─── */
 .paste-toggle { text-align:center; padding:7px 0 0; font-size:11px; color:var(--muted); cursor:pointer; border-top:1px solid var(--border); margin-top:8px; user-select:none; transition:color 0.15s; }
 .paste-toggle:hover { color:var(--accent); }
 .paste-body { display:none; margin-top:7px; }
 .paste-body.open { display:block; animation:fadeDown 0.2s ease; }
 @keyframes fadeDown { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
 
-/* ─── BUTTONS ─── */
 .btn { width:100%; padding:9px; border-radius:9px; border:none; font-family:'Outfit',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:opacity 0.12s,transform 0.1s; }
 .btn:active { opacity:0.85; transform:scale(0.98); }
 .btn:disabled { opacity:0.35; cursor:not-allowed; }
@@ -258,21 +130,10 @@ body {
 .btn-outline { background:var(--s1); border:1px solid var(--border); color:var(--text2); margin-top:6px; }
 .btn-red     { background:var(--redd); border:1px solid var(--red); color:var(--red); margin-top:6px; }
 
-/* ─── PREVIEW TABLE ─── */
 .preview-wrap { flex:1; min-height:0; overflow-y:auto; border:1px solid var(--border); border-radius:9px; }
 
-#sectionScroll {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-#secPreview, #secProgress, #secComplete {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
+#sectionScroll { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+#secPreview, #secProgress, #secComplete { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 #secPreview .btn, #secPreview .btn-accent, #secPreview .btn-outline { flex-shrink: 0; }
 .preview-head,.preview-row { display:grid; grid-template-columns:1fr 46px 46px; padding:5px 8px; gap:5px; align-items:center; }
 .preview-head { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); border-bottom:1px solid var(--border); background:var(--s2); }
@@ -284,19 +145,11 @@ body {
 .pr-qoh   { text-align:center; font-weight:700; color:var(--blue);   font-family:'IBM Plex Mono',monospace; font-size:11px; }
 .preview-head div:nth-child(2),.preview-head div:nth-child(3){text-align:center;}
 
-/* ─── PROGRESS ─── */
 .prog-bar-wrap { height:4px; background:var(--s3); border-radius:99px; overflow:hidden; margin-bottom:8px; flex-shrink:0; }
 .prog-bar { height:100%; background:var(--accent); border-radius:99px; transition:width 0.4s cubic-bezier(0.4,0,0.2,1); width:0%; }
 .prog-stats { display:flex; gap:5px; margin-bottom:8px; flex-shrink:0; }
-.stat-pill {
-  flex:1; padding:6px 3px; border-radius:7px; text-align:center;
-  font-size:10px; font-weight:700; border:1px solid;
-  animation: statPop 0.35s cubic-bezier(0.22,1,0.36,1) both;
-}
-.stat-pill:nth-child(1){animation-delay:0ms}
-.stat-pill:nth-child(2){animation-delay:40ms}
-.stat-pill:nth-child(3){animation-delay:80ms}
-.stat-pill:nth-child(4){animation-delay:120ms}
+.stat-pill { flex:1; padding:6px 3px; border-radius:7px; text-align:center; font-size:10px; font-weight:700; border:1px solid; animation: statPop 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+.stat-pill:nth-child(1){animation-delay:0ms} .stat-pill:nth-child(2){animation-delay:40ms} .stat-pill:nth-child(3){animation-delay:80ms} .stat-pill:nth-child(4){animation-delay:120ms}
 @keyframes statPop { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
 .stat-entered  { background:var(--accentd); border-color:rgba(20,83,45,0.3);  color:var(--accent); }
 .stat-skipped  { background:var(--yd);      border-color:rgba(146,64,14,0.3); color:var(--yellow); }
@@ -305,7 +158,6 @@ body {
 .stat-num { font-family:'Bricolage Grotesque',sans-serif; font-size:19px; font-weight:800; display:block; line-height:1.2; }
 .stat-sub { font-size:9px; font-weight:600; opacity:0.75; display:block; margin-top:1px; }
 
-/* ─── LOG ─── */
 .log-wrap { flex:1; min-height:0; overflow-y:auto; background:var(--s1); border:1px solid var(--border); border-radius:9px; padding:6px 8px; }
 .log-line { font-size:10px; font-family:'IBM Plex Mono',monospace; padding:2px 0; border-bottom:1px solid var(--border); color:var(--muted); animation:logSlide 0.15s ease both; }
 .log-line:last-child { border-bottom:none; }
@@ -315,64 +167,30 @@ body {
 .log-line.notfound { color:var(--red); }
 .log-line.flag     { color:var(--blue); }
 
-/* ─── EMAIL BADGE ─── */
-.email-badge {
-  display:none; align-items:center; gap:6px;
-  margin-top:8px; padding:7px 10px; border-radius:8px;
-  font-size:11px; font-weight:700; border:1px solid;
-  font-family:'Outfit',sans-serif;
-}
-@keyframes badgePop {
-  from{opacity:0;transform:translateY(4px) scale(0.95)}
-  to  {opacity:1;transform:translateY(0)   scale(1)}
-}
+.email-badge { display:none; align-items:center; gap:6px; margin-top:8px; padding:7px 10px; border-radius:8px; font-size:11px; font-weight:700; border:1px solid; font-family:'Outfit',sans-serif; }
+@keyframes badgePop { from{opacity:0;transform:translateY(4px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
 .email-sending { background:var(--yd);      border-color:rgba(146,64,14,0.3); color:var(--yellow); }
 .email-sent    { background:var(--accentd); border-color:rgba(20,83,45,0.3);  color:var(--accent); animation:badgePop 0.4s cubic-bezier(0.22,1,0.36,1) forwards; }
 .email-failed  { background:var(--redd);    border-color:rgba(197,48,48,0.3); color:var(--red);    animation:badgePop 0.4s cubic-bezier(0.22,1,0.36,1) forwards; }
 @keyframes dotPulse { 0%,100%{opacity:1}50%{opacity:0.25} }
 .email-dot { width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block; animation:dotPulse 0.9s infinite; flex-shrink:0; }
 
-/* ─── STATUS BAR ─── */
-.status-bar {
-  flex-shrink:0; padding:5px 13px; background:var(--s1); border-top:1px solid var(--border);
-  font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px;
-}
+.status-bar { flex-shrink:0; padding:5px 13px; background:var(--s1); border-top:1px solid var(--border); font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px; }
 .status-dot { width:6px; height:6px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background 0.3s; }
 .status-dot.green  { background:var(--accent); }
 .status-dot.red    { background:var(--red); }
 .status-dot.yellow { background:var(--amber); animation:pulse 1s infinite; }
 
-/* ─── FOOTER ─── */
-.footer {
-  flex-shrink:0; padding:4px 13px 6px; background:var(--s1); border-top:1px solid var(--border);
-  text-align:center; font-size:10px; color:var(--muted);
-}
+.footer { flex-shrink:0; padding:4px 13px 6px; background:var(--s1); border-top:1px solid var(--border); text-align:center; font-size:10px; color:var(--muted); }
 .footer span { color:var(--text2); font-weight:600; }
 
-/* ─── STARTUP ─── */
-#secStartup {
-  position:fixed; inset:0; z-index:999; background:var(--bg);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:32px 26px;
-}
-.startup-logo {
-  font-family:'Bricolage Grotesque',sans-serif; font-size:13px; font-weight:800;
-  letter-spacing:-0.2px; color:var(--accent); margin-bottom:28px;
-  opacity:0; animation:fadeUp 0.5s ease forwards 0.1s;
-}
+#secStartup { position:fixed; inset:0; z-index:999; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 26px; }
+.startup-logo { font-family:'Bricolage Grotesque',sans-serif; font-size:13px; font-weight:800; letter-spacing:-0.2px; color:var(--accent); margin-bottom:28px; opacity:0; animation:fadeUp 0.5s ease forwards 0.1s; }
 .startup-steps { width:100%; }
-.startup-step {
-  display:flex; align-items:center; gap:10px; padding:9px 0;
-  border-bottom:1px solid var(--border);
-  opacity:0; transform:translateY(6px); transition:opacity 0.35s ease,transform 0.35s ease;
-}
+.startup-step { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); opacity:0; transform:translateY(6px); transition:opacity 0.35s ease,transform 0.35s ease; }
 .startup-step:last-child { border-bottom:none; }
 .startup-step.visible { opacity:1; transform:translateY(0); }
-.step-icon {
-  width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; font-size:10px; background:var(--s2); border:1px solid var(--border);
-  transition:background 0.3s,border-color 0.3s; font-family:'IBM Plex Mono',monospace; color:var(--muted);
-}
+.step-icon { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:10px; background:var(--s2); border:1px solid var(--border); transition:background 0.3s,border-color 0.3s; font-family:'IBM Plex Mono',monospace; color:var(--muted); }
 .step-icon.spinning-ring { border-color:var(--accent); border-top-color:transparent; animation:spinRing 0.7s linear infinite; }
 .step-icon.done   { background:var(--accentd); border-color:rgba(20,83,45,0.4);  color:var(--accent); }
 .step-icon.error  { background:var(--redd);    border-color:rgba(197,48,48,0.4); color:var(--red); }
@@ -380,11 +198,7 @@ body {
 .step-label { font-size:12px; font-weight:700; color:var(--text); font-family:'Outfit',sans-serif; }
 .step-sub   { font-size:10px; color:var(--muted); margin-top:1px; min-height:13px; font-family:'Outfit',sans-serif; }
 
-/* ─── UPDATE ─── */
-#secUpdate {
-  position:fixed; inset:0; z-index:1000; background:var(--bg);
-  display:none; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px;
-}
+#secUpdate { position:fixed; inset:0; z-index:1000; background:var(--bg); display:none; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; }
 #secUpdate.show { display:flex; }
 .upd-icon { width:44px; height:44px; border-radius:50%; background:var(--yd); border:1.5px solid rgba(146,64,14,0.4); display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:14px; color:var(--yellow); font-family:'Bricolage Grotesque',sans-serif; font-weight:800; opacity:0; animation:fadeUp 0.4s ease forwards 0.05s; }
 .upd-title { font-family:'Bricolage Grotesque',sans-serif; font-size:16px; font-weight:800; color:var(--text); margin-bottom:4px; text-align:center; opacity:0; animation:fadeUp 0.4s ease forwards 0.1s; }
@@ -397,12 +211,7 @@ body {
 .upd-copy-hint { font-size:10px; color:var(--muted); text-align:center; opacity:0; animation:fadeUp 0.4s ease forwards 0.32s; }
 .upd-copy-hint.copied { color:var(--accent); }
 
-/* ─── DEV OVERLAY ─── */
-#devOverlay {
-  display:none; position:fixed; inset:0; z-index:9999;
-  background:rgba(241,246,242,0.97); backdrop-filter:blur(6px);
-  flex-direction:column; padding:14px 13px; overflow-y:auto;
-}
+#devOverlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(241,246,242,0.97); backdrop-filter:blur(6px); flex-direction:column; padding:14px 13px; overflow-y:auto; }
 .dev-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .dev-tag { font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--amber); }
 .dev-close { background:none; border:1px solid var(--border); border-radius:7px; padding:3px 10px; color:var(--text2); font-size:11px; font-weight:700; cursor:pointer; }
@@ -411,39 +220,35 @@ body {
 .dev-card-desc  { font-size:11px; color:var(--muted); margin-bottom:9px; line-height:1.5; }
 .dev-card-status { font-size:11px; color:var(--muted); margin-top:6px; min-height:14px; text-align:center; }
 
-/* ─── MISC ─── */
 @keyframes pulse    { 0%,100%{opacity:1}50%{opacity:0.4} }
 @keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 @keyframes spinRing { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 @keyframes fadeUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 .spinning { animation:spin 0.7s linear infinite; display:inline-block; }
-
 </style>
 </head>
 <body>
 
-<!-- ═══ STARTUP ═══ -->
 <div id="secStartup">
   <div class="startup-logo">Project: Herald</div>
   <div class="startup-steps">
     <div class="startup-step" id="stepInit">
-      <div class="step-icon" id="stepInitIcon">···</div>
+      <div class="step-icon" id="stepInitIcon">...</div>
       <div><div class="step-label">Initializing</div><div class="step-sub" id="stepInitSub">Starting up...</div></div>
     </div>
     <div class="startup-step" id="stepUpdate">
-      <div class="step-icon" id="stepUpdateIcon">···</div>
+      <div class="step-icon" id="stepUpdateIcon">...</div>
       <div><div class="step-label">Update Check</div><div class="step-sub" id="stepUpdateSub">Waiting...</div></div>
     </div>
     <div class="startup-step" id="stepReady">
-      <div class="step-icon" id="stepReadyIcon">···</div>
+      <div class="step-icon" id="stepReadyIcon">...</div>
       <div><div class="step-label">Ready</div><div class="step-sub" id="stepReadySub">Preparing...</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ UPDATE ═══ -->
 <div id="secUpdate">
-  <div class="upd-icon">↑</div>
+  <div class="upd-icon">&#8593;</div>
   <div class="upd-title" id="updTitle">Update Available</div>
   <div class="upd-version" id="updVersion"></div>
   <div class="upd-divider"></div>
@@ -456,29 +261,22 @@ body {
   <div class="upd-copy-hint" id="updCopyHint">tap to open in new tab</div>
 </div>
 
-<!-- ═══ HEADER ═══ -->
 <div class="header">
-  <div class="header-logo">
-    <img src="icon128.png" alt="">
-  </div>
-  <div class="header-title">
-    Project: Herald
-    <span class="ver" id="versionBadge"></span>
-  </div>
+  <div class="header-logo"><img src="icon128.png" alt=""></div>
+  <div class="header-title">Project: Herald <span class="ver" id="versionBadge"></span></div>
   <div class="header-store" id="headerStore" style="display:none"></div>
   <button class="dev-btn" id="devTriggerBtn">DEV</button>
 </div>
 
-<!-- ═══ DEV OVERLAY ═══ -->
 <div id="devOverlay">
   <div class="dev-header">
     <div class="dev-tag">Dev Mode</div>
     <button class="dev-close" id="devCloseBtn">Close</button>
   </div>
-  <p style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Tests run real code with synthetic data — not mocks.</p>
+  <p style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Tests run real code with synthetic data.</p>
   <div class="dev-card">
     <div class="dev-card-title">Email Receipt</div>
-    <div class="dev-card-desc">Injects a fake completed order and calls the real sendCompletionEmail(). Check sarniapetvalu@gmail.com.</div>
+    <div class="dev-card-desc">Injects a fake completed order and calls sendCompletionEmail(). Check sarniapetvalu@gmail.com.</div>
     <button id="devEmailBtn" style="width:100%;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Email Test</button>
     <div class="dev-card-status" id="devEmailStatus"></div>
   </div>
@@ -490,30 +288,28 @@ body {
   </div>
   <div class="dev-card">
     <div class="dev-card-title">Update Check</div>
-    <div class="dev-card-desc">Forces a fresh update check against Vercel, same as startup does.</div>
+    <div class="dev-card-desc">Forces a fresh update check against Vercel.</div>
     <button id="devUpdateBtn" style="width:100%;padding:8px;background:var(--s2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Run Update Check</button>
     <div class="dev-card-status" id="devUpdateStatus"></div>
   </div>
 </div>
 
-<!-- ═══ DRIVE LABEL BAR (pinned) ═══ -->
 <div id="driveLabelBar" style="flex-shrink:0;padding:10px 13px 6px;border-bottom:1px solid var(--border);background:var(--bg);">
   <div class="section-label" style="margin-bottom:0">
     <span>This Week's Orders</span>
     <button id="btnRefresh" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;padding:0;display:flex;align-items:center;gap:3px;font-family:'Outfit',sans-serif">
-      <span id="refreshIcon" style="display:inline-block">↻</span>&nbsp;Refresh
+      <span id="refreshIcon" style="display:inline-block">&#8635;</span>&nbsp;Refresh
     </button>
   </div>
 </div>
 
-<!-- ═══ MAIN FILL ═══ -->
 <div id="mainFill">
   <div id="driveOrderList">
     <div style="text-align:center;padding:14px;color:var(--muted);font-size:12px">Loading from Drive...</div>
   </div>
   <div id="sectionScroll" style="display:none;">
     <div class="section" id="secPreview" style="display:none;">
-      <div class="section-label">Order Preview — <span id="previewCount">0</span> items</div>
+      <div class="section-label">Order Preview &mdash; <span id="previewCount">0</span> items</div>
       <div class="preview-wrap">
         <div class="preview-head"><div>Item #</div><div>Order</div><div>On Hand</div></div>
         <div id="previewList"></div>
@@ -523,7 +319,7 @@ body {
     </div>
     <div class="section" id="secProgress" style="display:none;">
       <div class="section-label">
-        <span>Progress — <span id="progLabel">0 / 0</span></span>
+        <span>Progress &mdash; <span id="progLabel">0 / 0</span></span>
         <span id="timerDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px">0:00</span>
       </div>
       <div class="prog-bar-wrap"><div class="prog-bar" id="progBar"></div></div>
@@ -548,13 +344,12 @@ body {
         <div class="stat-pill stat-flagged"><span class="stat-num" id="doneFlagged">0</span>Flagged<span class="stat-sub">manual</span></div>
       </div>
       <div id="emailStatusBadge" class="email-badge"></div>
-      <button class="btn btn-outline" id="btnDownloadNF" style="display:none">Download Issues CSV</button>
+      <button class="btn btn-outline" id="btnDownloadNF" style="display:none">Download Report PDF</button>
       <button class="btn btn-accent" id="btnReset" style="margin-top:6px">Start New Order</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ DRIVE BOTTOM (pinned) ═══ -->
 <div class="drive-bottom" id="driveBottom">
   <div class="section-label" style="margin-bottom:5px">Input Speed</div>
   <div class="speed-wrap">
@@ -564,31 +359,13 @@ body {
     <button class="speed-btn"               id="speedCustom" data-speed="custom">Custom</button>
   </div>
   <div class="custom-inputs" id="customInputs">
-    <div class="ci-row">
-      <div><div class="ci-label">Filter Wait</div><div class="ci-unit">ms after search filter</div></div>
-      <input class="ci-input" id="ciFilter"  type="number" value="2500" min="0" max="9999">
-    </div>
-    <div class="ci-row" id="ciClearRow">
-      <div><div class="ci-label">After Clear</div><div class="ci-unit">ms after field cleared</div></div>
-      <input class="ci-input" id="ciClear"   type="number" value="800"  min="0" max="9999">
-    </div>
-    <div class="ci-row">
-      <div><div class="ci-label">After Qty</div><div class="ci-unit">ms after qty entered</div></div>
-      <input class="ci-input" id="ciQty"     type="number" value="600"  min="0" max="9999">
-    </div>
-    <div class="ci-row">
-      <div><div class="ci-label">Between Items</div><div class="ci-unit">ms gap between rows</div></div>
-      <input class="ci-input" id="ciBetween" type="number" value="400"  min="0" max="9999">
-    </div>
-    <div class="ci-row">
-      <div><div class="ci-label">Sub Search Wait</div><div class="ci-unit">ms after substitute filter</div></div>
-      <input class="ci-input" id="ciSubFilter" type="number" value="2500" min="0" max="9999">
-    </div>
+    <div class="ci-row"><div><div class="ci-label">Filter Wait</div><div class="ci-unit">ms after search filter</div></div><input class="ci-input" id="ciFilter" type="number" value="2500" min="0" max="9999"></div>
+    <div class="ci-row" id="ciClearRow"><div><div class="ci-label">After Clear</div><div class="ci-unit">ms after field cleared</div></div><input class="ci-input" id="ciClear" type="number" value="800" min="0" max="9999"></div>
+    <div class="ci-row"><div><div class="ci-label">After Qty</div><div class="ci-unit">ms after qty entered</div></div><input class="ci-input" id="ciQty" type="number" value="600" min="0" max="9999"></div>
+    <div class="ci-row"><div><div class="ci-label">Between Items</div><div class="ci-unit">ms gap between rows</div></div><input class="ci-input" id="ciBetween" type="number" value="400" min="0" max="9999"></div>
+    <div class="ci-row"><div><div class="ci-label">Sub Search Wait</div><div class="ci-unit">ms after substitute filter</div></div><input class="ci-input" id="ciSubFilter" type="number" value="2500" min="0" max="9999"></div>
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:4px 0">
-      <div>
-        <div class="ci-label">Overwrite Mode</div>
-        <div class="ci-unit" id="ciOverwriteLabel">Off — clear field first</div>
-      </div>
+      <div><div class="ci-label">Overwrite Mode</div><div class="ci-unit" id="ciOverwriteLabel">Off - clear field first</div></div>
       <label style="position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0;margin-top:2px">
         <input type="checkbox" id="ciOverwriteToggle" style="opacity:0;width:0;height:0">
         <span id="ciOverwriteTrack" style="position:absolute;cursor:pointer;inset:0;background:var(--s3);border-radius:20px;transition:background 0.2s"></span>
@@ -611,7 +388,6 @@ body {
 <div class="footer">made by <span>Ketan Vashisht</span></div>
 
 <script>
-// Overwrite toggle visual
 document.getElementById('ciOverwriteToggle').addEventListener('change', function() {
   const on = this.checked;
   document.getElementById('ciOverwriteTrack').style.background = on ? 'var(--accent)' : 'var(--s3)';
