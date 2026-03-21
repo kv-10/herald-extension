@@ -128,6 +128,19 @@ function hideStartup() {
   setTimeout(() => { el.style.display = 'none'; }, 300);
 }
 
+function copyUpdateUrl() {
+  const url = 'https://petvalu-bot.vercel.app';
+  navigator.clipboard.writeText(url).then(() => {
+    const hint = document.getElementById('updCopyHint');
+    const box  = document.getElementById('updUrlBox');
+    if (hint) { hint.textContent = '✓ copied!'; hint.classList.add('copied'); }
+    if (box)  { box.style.borderColor = 'var(--accent)'; }
+    setTimeout(() => {
+      if (hint) { hint.textContent = 'tap to copy'; hint.classList.remove('copied'); }
+    }, 2000);
+  }).catch(() => {});
+}
+
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function updateOverwriteLabel() {
@@ -722,24 +735,193 @@ function showEmailPrompt() {
   document.getElementById('emailPromptNo').addEventListener('click',  () => { el.innerHTML=''; el.style.display='none'; });
 }
 
+// ── PDF GENERATOR ──
+function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, notFound, flagged }) {
+  const esc = s => String(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+  const hex = (r,g,b) => `${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)}`;
+
+  const PW = 595, PH = 842, ML = 48, MR = 48, MT = 48;
+  const contentW = PW - ML - MR;
+
+  const C_HEADER  = hex(15,23,42);
+  const C_TEXT    = hex(30,41,59);
+  const C_MUTED   = hex(100,116,139);
+  const C_GREEN   = hex(22,163,74);
+  const C_GREEN_BG= hex(220,252,231);
+  const C_RED     = hex(220,38,38);
+  const C_RED_BG  = hex(254,226,226);
+  const C_ORANGE  = hex(234,88,12);
+  const C_ORG_BG  = hex(255,237,213);
+  const C_GREY    = hex(100,116,139);
+  const C_GREY_BG = hex(241,245,249);
+  const C_WHITE   = hex(255,255,255);
+
+  const total = entered.length + skipped.length + notFound.length + flagged.length;
+  const cmds = [];
+  const c = s => cmds.push(s);
+  const py = yy => PH - yy;
+
+  const drawRect = (x,yt,w,h,fill,stroke) => {
+    const yb = py(yt+h);
+    if (fill)   c(`${fill} rg ${x} ${yb} ${w} ${h} re f`);
+    if (stroke) c(`${stroke} RG 0.5 w ${x} ${yb} ${w} ${h} re S`);
+  };
+  const drawLine = (x1,yt1,x2,yt2,color,lw=0.5) => {
+    c(`${color} RG ${lw} w ${x1} ${py(yt1)} m ${x2} ${py(yt2)} l S`);
+  };
+  const drawText = (txt, x, yt, size, color, bold) => {
+    c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${size} Tf ${color} rg ${x} ${py(yt)} Td (${esc(String(txt))}) Tj ET`);
+  };
+
+  let cy = MT;
+
+  // Header bar
+  drawRect(0, cy, PW, 58, C_HEADER, null);
+  drawText('Project: Herald', ML, cy+14, 18, C_WHITE, true);
+  drawText('Order Run Report', ML, cy+32, 10, hex(148,163,184), false);
+  drawText(store, PW-MR-160, cy+14, 11, hex(148,163,184), false);
+  drawText(`${operator} - ${date}`, PW-MR-160, cy+30, 9, hex(100,116,139), false);
+  cy += 58 + 18;
+
+  // Summary cards
+  const cards = [
+    { label:'Entered',   val:entered.length,  bg:C_GREEN_BG, fg:C_GREEN,  dot:C_GREEN  },
+    { label:'Not Found', val:notFound.length, bg:C_RED_BG,   fg:C_RED,    dot:C_RED    },
+    { label:'Flagged',   val:flagged.length,  bg:C_ORG_BG,   fg:C_ORANGE, dot:C_ORANGE },
+    { label:'Skipped',   val:skipped.length,  bg:C_GREY_BG,  fg:C_GREY,   dot:C_GREY   },
+  ];
+  const cardW = (contentW - 12) / 4;
+  cards.forEach((card, i) => {
+    const cx = ML + i*(cardW+4);
+    drawRect(cx, cy, cardW, 52, card.bg, null);
+    drawRect(cx, cy, 4, 52, card.dot, null);
+    drawText(String(card.val), cx+12, cy+10, 22, card.fg, true);
+    drawText(card.label, cx+12, cy+36, 8, card.fg, false);
+  });
+  cy += 52 + 10;
+
+  drawText(`Total items: ${total}`, ML, cy+10, 9, C_MUTED, false);
+  drawText(`Runtime: ${runtimeStr}`, ML+120, cy+10, 9, C_MUTED, false);
+  cy += 22;
+
+  const ROW_H = 17;
+  const COL1 = ML, COL2 = ML+110, COL3 = ML+170, COL4 = ML+230;
+
+  const drawSection = (title, items, rowFn, color, bgColor) => {
+    if (items.length === 0) return;
+    cy += 8;
+    drawRect(ML, cy, contentW, 22, bgColor, null);
+    drawRect(ML, cy, 4, 22, color, null);
+    drawText(title, ML+10, cy+5, 10, color, true);
+    drawText(`${items.length} item${items.length!==1?'s':''}`, ML+220, cy+7, 8, color, false);
+    cy += 22;
+    drawRect(ML, cy, contentW, 14, hex(226,232,240), null);
+    drawText('Item #', COL1+4, cy+3, 7.5, C_MUTED, true);
+    drawText('Order Qty', COL2+4, cy+3, 7.5, C_MUTED, true);
+    drawText('On Hand', COL3+4, cy+3, 7.5, C_MUTED, true);
+    drawText('Reason', COL4+4, cy+3, 7.5, C_MUTED, true);
+    cy += 14;
+    items.forEach((item, idx) => {
+      const rowBg = idx%2===0 ? C_WHITE : hex(248,250,252);
+      drawRect(ML, cy, contentW, ROW_H, rowBg, null);
+      rowFn(item, cy);
+      cy += ROW_H;
+    });
+    drawLine(ML, cy, ML+contentW, cy, hex(226,232,240), 0.5);
+    cy += 4;
+  };
+
+  drawSection('Not Found', notFound,
+    (item, ry) => {
+      drawText(item.item||'', COL1+4, ry+4, 8, C_TEXT, true);
+      drawText(item.order!=null?String(item.order):'', COL2+4, ry+4, 8, C_TEXT, false);
+      drawText(item.qoh!=null?String(item.qoh):'', COL3+4, ry+4, 8, C_TEXT, false);
+      drawText((item.reason||'Not found').slice(0,50), COL4+4, ry+4, 7.5, C_RED, false);
+    }, C_RED, C_RED_BG);
+
+  drawSection('Flagged - Enter Manually', flagged,
+    (item, ry) => {
+      drawText(item.item||'', COL1+4, ry+4, 8, C_TEXT, true);
+      drawText(item.qty!=null?String(item.qty):'', COL2+4, ry+4, 8, C_TEXT, false);
+      drawText('', COL3+4, ry+4, 8, C_TEXT, false);
+      drawText((item.reason||'Could not enter qty').slice(0,50), COL4+4, ry+4, 7.5, C_ORANGE, false);
+    }, C_ORANGE, C_ORG_BG);
+
+  drawSection('Skipped', skipped,
+    (item, ry) => {
+      drawText(item.item||'', COL1+4, ry+4, 8, C_TEXT, true);
+      drawText('', COL2+4, ry+4, 8, C_TEXT, false);
+      drawText('', COL3+4, ry+4, 8, C_TEXT, false);
+      drawText((item.reason||'Skipped').slice(0,50), COL4+4, ry+4, 7.5, C_GREY, false);
+    }, C_GREY, C_GREY_BG);
+
+  if (notFound.length===0 && flagged.length===0 && skipped.length===0) {
+    cy += 20;
+    drawRect(ML, cy, contentW, 40, C_GREEN_BG, null);
+    drawText('All ' + entered.length + ' items entered successfully - no issues to report.', ML+16, cy+13, 11, C_GREEN, true);
+    cy += 40;
+  }
+
+  drawLine(0, PH-30, PW, PH-30, hex(226,232,240), 0.5);
+  drawText('Project: Herald - Pet Valu Order Management', ML, PH-18, 7.5, C_MUTED, false);
+  drawText('Generated ' + new Date().toLocaleString(), PW-MR-180, PH-18, 7.5, C_MUTED, false);
+
+  // Assemble PDF
+  const stream = cmds.join('\n');
+  const streamBytes = unescape(encodeURIComponent(stream));
+  const streamLen = streamBytes.length;
+
+  const objects = [];
+  const addObj = (n, body) => { objects[n] = body; };
+  addObj(1, `<< /Type /Catalog /Pages 2 0 R >>`);
+  addObj(2, `<< /Type /Pages /Kids [3 0 R] /Count 1 >>`);
+  addObj(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Contents 6 0 R /Resources << /Font << /Helvetica 4 0 R /Helvetica-Bold 5 0 R >> >> >>`);
+  addObj(4, `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>`);
+  addObj(5, `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>`);
+
+  let pdf = '%PDF-1.4\n';
+  const objStart = {};
+  for (let i = 1; i <= 5; i++) { objStart[i] = pdf.length; pdf += `${i} 0 obj\n${objects[i]}\nendobj\n`; }
+  objStart[6] = pdf.length;
+  pdf += `6 0 obj\n<< /Length ${streamLen} >>\nstream\n${stream}\nendstream\nendobj\n`;
+
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 7\n0000000000 65535 f \n`;
+  for (let i = 1; i <= 6; i++) pdf += String(objStart[i]).padStart(10,'0') + ' 00000 n \n';
+  pdf += `trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  const bytes = unescape(encodeURIComponent(pdf));
+  let b64 = '';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b = [bytes.charCodeAt(i), bytes.charCodeAt(i+1)||0, bytes.charCodeAt(i+2)||0];
+    const chunk = (b[0]<<16)|(b[1]<<8)|b[2];
+    b64 += chars[(chunk>>18)&63]+chars[(chunk>>12)&63]+(i+1<bytes.length?chars[(chunk>>6)&63]:'=')+(i+2<bytes.length?chars[chunk&63]:'=');
+  }
+  return b64;
+}
+
 async function sendCompletionEmail() {
   const r = localState?.results || {};
   const od = localState?.orderData || {};
-  const store = od.store || 'Unknown Store', operator = od.operator || 'Unknown';
-  const date = new Date().toLocaleDateString('en-CA');
+  const store    = od.store    || 'Unknown Store';
+  const operator = od.operator || 'Unknown';
+  const date     = new Date().toLocaleDateString('en-CA');
   setEmailStatus('sending');
   const timerStart = localState?.timerStart;
   let runtimeStr = 'N/A';
-  if (timerStart) { const s = Math.floor((Date.now()-timerStart)/1000); runtimeStr = `${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; }
+  if (timerStart) {
+    const s = Math.floor((Date.now()-timerStart)/1000);
+    runtimeStr = `${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`;
+  }
   const entered=r.entered||[], skipped=r.skipped||[], notFound=r.notFound||[], flagged=r.flagged||[];
-  let csv = 'Item #,Order Qty,On Hand,Reason\n';
-  notFound.forEach(i => { csv += `"${i.item}",${i.order||''},${i.qoh||''},"${i.reason||'Not found'}"\n`; });
-  skipped.forEach(i  => { csv += `"${i.item}",,,"${i.reason||'Skipped'}"\n`; });
-  flagged.forEach(i  => { csv += `"${i.item}",${i.qty||''},,"${i.reason||'Could not enter qty'}"\n`; });
-  const payload = { action:'sendEmail', store, operator, date, runtime:runtimeStr,
+  const pdfBase64 = buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, notFound, flagged });
+  const payload = {
+    action:'sendEmail', store, operator, date, runtime:runtimeStr,
     entered:entered.length, skipped:skipped.length, notFound:notFound.length, flagged:flagged.length,
     total:entered.length+skipped.length+notFound.length+flagged.length,
-    csvContent:csv, filename:`petvalu_issues_${store.replace(/ /g,'_')}_${date}.csv` };
+    pdfBase64, filename:`petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`
+  };
   try { await chrome.runtime.sendMessage({ type:'APPS_POST', payload }); setEmailStatus('sent'); }
   catch(e) { console.warn('[PV] Email send failed:', e.message); setEmailStatus('failed'); }
 }
@@ -754,14 +936,23 @@ function setEmailStatus(state) {
 
 function downloadNotFound() {
   const r = localState?.results; if (!r) return;
-  let csv = 'Item #,Order Qty,On Hand,Reason\n';
-  (r.notFound||[]).forEach(i => { csv += `"${i.item}",${i.order},${i.qoh},"${i.reason||'Not found'}"\n`; });
-  (r.skipped||[]).forEach(i =>  { csv += `"${i.item}",,, "${i.reason||'Skipped'}"\n`; });
-  (r.flagged||[]).forEach(i =>  { csv += `"${i.item}",${i.qty||''},,"${i.reason||'Could not enter qty'}"\n`; });
-  const store = localState?.orderData?.store || 'order';
+  const od = localState?.orderData || {};
+  const store = od.store || 'order', operator = od.operator || '';
+  const date = new Date().toLocaleDateString('en-CA');
+  const timerStart = localState?.timerStart;
+  let runtimeStr = 'N/A';
+  if (timerStart) { const s = Math.floor((Date.now()-timerStart)/1000); runtimeStr = `${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; }
+  const pdfBase64 = buildReportPDF({
+    store, operator, date, runtimeStr,
+    entered: r.entered||[], skipped: r.skipped||[], notFound: r.notFound||[], flagged: r.flagged||[]
+  });
+  const bytes = atob(pdfBase64);
+  const buf = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+  const blob = new Blob([buf], { type:'application/pdf' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-  a.download = `petvalu_issues_${store.replace(/ /g,'_')}_${new Date().toLocaleDateString('en-CA')}.csv`;
+  a.href = URL.createObjectURL(blob);
+  a.download = `petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`;
   a.click();
 }
 
@@ -943,8 +1134,8 @@ async function devTestDrive() {
   const csvContent  = `Store,Date,Item #,Order Qty,On Hand,Status,Notes\n"Lakeshore Rd","${date}","10045231",6,10,Entered,\n`;
   try {
     const results = await Promise.all([
-      chrome.runtime.sendMessage({ type:'APPS_POST', payload:{ filename:base+'.json', content:jsonContent } }),
-      chrome.runtime.sendMessage({ type:'APPS_POST', payload:{ filename:base+'.csv',  content:csvContent  } })
+      chrome.runtime.sendMessage({ type:'APPS_POST', payload:{ filename: base+'.json', content: jsonContent } }),
+      chrome.runtime.sendMessage({ type:'APPS_POST', payload:{ filename: base+'.csv',  content: csvContent  } })
     ]);
     const allOk = results.every(r => r?.ok);
     statusEl.style.color = allOk ? 'var(--accent)' : 'var(--red)';
