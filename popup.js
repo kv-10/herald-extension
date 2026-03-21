@@ -46,15 +46,15 @@ async function runStartup() {
   await sleep(300);
 
   localState = await getState();
-  stepSet('stepInit', 'done', '✓', 'Loaded');
+  stepSet('stepInit', 'done', '\u2713', 'Loaded');
 
   if (localState.phase !== 'idle') {
     stepShow('stepUpdate');
-    stepSet('stepUpdate', 'done', '✓', 'Skipped — bot is running');
+    stepSet('stepUpdate', 'done', '\u2713', 'Skipped \u2014 bot is running');
     stepShow('stepReady');
     stepSet('stepReady', 'spinning-ring', '', 'Resuming session...');
     await sleep(400);
-    stepSet('stepReady', 'done', '✓', 'Session restored');
+    stepSet('stepReady', 'done', '\u2713', 'Session restored');
     await sleep(300);
     hideStartup();
     renderState();
@@ -83,7 +83,7 @@ async function runStartup() {
     const remoteVersion = match[1];
 
     if (remoteVersion !== currentVersion) {
-      stepSet('stepUpdate', 'update', '↑', 'v' + remoteVersion + ' available');
+      stepSet('stepUpdate', 'update', '\u2191', 'v' + remoteVersion + ' available');
       await sleep(300);
       const secStartup = document.getElementById('secStartup');
       const secUpdate  = document.getElementById('secUpdate');
@@ -92,22 +92,22 @@ async function runStartup() {
       await sleep(300);
       secStartup.style.display = 'none';
       document.getElementById('updTitle').textContent = 'Update Available';
-      document.getElementById('updVersion').textContent = currentVersion + ' → v' + remoteVersion;
+      document.getElementById('updVersion').textContent = currentVersion + ' \u2192 v' + remoteVersion;
       secUpdate.classList.add('show');
       return;
     } else {
-      stepSet('stepUpdate', 'done', '✓', 'Up to date (v' + currentVersion + ')');
+      stepSet('stepUpdate', 'done', '\u2713', 'Up to date (v' + currentVersion + ')');
     }
   } catch(e) {
     const cv = browser.runtime.getManifest().version;
-    stepSet('stepUpdate', 'warn', '!', 'Could not check — continuing (v' + cv + ')');
+    stepSet('stepUpdate', 'warn', '!', 'Could not check \u2014 continuing (v' + cv + ')');
   }
 
   await sleep(200);
   stepShow('stepReady');
   stepSet('stepReady', 'spinning-ring', '', 'Loading orders...');
   await sleep(300);
-  stepSet('stepReady', 'done', '✓', 'Ready');
+  stepSet('stepReady', 'done', '\u2713', 'Ready');
   await sleep(350);
   hideStartup();
   renderState();
@@ -133,7 +133,7 @@ function copyUpdateUrl() {
   navigator.clipboard.writeText(url).then(() => {
     const hint = document.getElementById('updCopyHint');
     const box  = document.getElementById('updUrlBox');
-    if (hint) { hint.textContent = '✓ copied!'; hint.classList.add('copied'); }
+    if (hint) { hint.textContent = '\u2713 copied!'; hint.classList.add('copied'); }
     if (box)  { box.style.borderColor = 'var(--accent)'; }
     setTimeout(() => {
       if (hint) { hint.textContent = 'tap to copy'; hint.classList.remove('copied'); }
@@ -145,7 +145,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function updateOverwriteLabel() {
   const lbl = document.getElementById('ciOverwriteLabel');
-  if (lbl) lbl.textContent = _overwriteMode ? 'On — select-all before typing' : 'Off — clear field first';
+  if (lbl) lbl.textContent = _overwriteMode ? 'On \u2014 select-all before typing' : 'Off \u2014 clear field first';
   const track = document.getElementById('ciOverwriteTrack');
   const thumb = document.getElementById('ciOverwriteThumb');
   if (track) track.style.background  = _overwriteMode ? 'var(--accent)' : 'var(--s3)';
@@ -736,8 +736,22 @@ function showEmailPrompt() {
 }
 
 // ── PDF GENERATOR ──
+// Sanitize text for PDF stream: replace Unicode specials with ASCII equivalents
+function pdfSafe(s) {
+  return String(s)
+    .replace(/\u2014/g, ' - ')   // em dash
+    .replace(/\u2013/g, ' - ')   // en dash
+    .replace(/\u2019/g, "'")     // right single quote
+    .replace(/\u2018/g, "'")     // left single quote
+    .replace(/\u201c/g, '"')     // left double quote
+    .replace(/\u201d/g, '"')     // right double quote
+    .replace(/\u2264/g, '<=')    // less than or equal
+    .replace(/\u2265/g, '>=')    // greater than or equal
+    .replace(/[^\x00-\x7F]/g, '?'); // any remaining non-ASCII
+}
+
 function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, notFound, flagged }) {
-  const esc = s => String(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+  const esc = s => pdfSafe(String(s)).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
   const hex = (r,g,b) => `${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)}`;
 
   const PW = 595, PH = 842, ML = 48, MR = 48, MT = 48;
@@ -759,6 +773,7 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   const total = entered.length + skipped.length + notFound.length + flagged.length;
   const cmds = [];
   const c = s => cmds.push(s);
+  // PDF y=0 is bottom-left; py() converts top-down coords to PDF coords
   const py = yy => PH - yy;
 
   const drawRect = (x,yt,w,h,fill,stroke) => {
@@ -769,19 +784,22 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   const drawLine = (x1,yt1,x2,yt2,color,lw=0.5) => {
     c(`${color} RG ${lw} w ${x1} ${py(yt1)} m ${x2} ${py(yt2)} l S`);
   };
+  // yt = top of the element; baseline = yt + descent from top
+  // For a font of size N, a good baseline offset from top = size * 0.75
   const drawText = (txt, x, yt, size, color, bold) => {
-    c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${size} Tf ${color} rg ${x} ${py(yt)} Td (${esc(String(txt))}) Tj ET`);
+    const baseline = py(yt + size * 0.85);
+    c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${size} Tf ${color} rg ${x} ${baseline} Td (${esc(String(txt))}) Tj ET`);
   };
 
   let cy = MT;
 
   // Header bar
-  drawRect(0, cy, PW, 58, C_HEADER, null);
-  drawText('Project: Herald', ML, cy+14, 18, C_WHITE, true);
-  drawText('Order Run Report', ML, cy+32, 10, hex(148,163,184), false);
-  drawText(store, PW-MR-160, cy+14, 11, hex(148,163,184), false);
-  drawText(`${operator} - ${date}`, PW-MR-160, cy+30, 9, hex(100,116,139), false);
-  cy += 58 + 18;
+  drawRect(0, cy, PW, 56, C_HEADER, null);
+  drawText('Project: Herald', ML, cy+6, 18, C_WHITE, true);
+  drawText('Order Run Report', ML, cy+30, 10, hex(148,163,184), false);
+  drawText(pdfSafe(store), PW-MR-160, cy+6, 11, hex(148,163,184), false);
+  drawText(`${pdfSafe(operator)} - ${date}`, PW-MR-160, cy+24, 9, hex(100,116,139), false);
+  cy += 56 + 16;
 
   // Summary cards
   const cards = [
@@ -795,32 +813,35 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
     const cx = ML + i*(cardW+4);
     drawRect(cx, cy, cardW, 52, card.bg, null);
     drawRect(cx, cy, 4, 52, card.dot, null);
-    drawText(String(card.val), cx+12, cy+10, 22, card.fg, true);
-    drawText(card.label, cx+12, cy+36, 8, card.fg, false);
+    drawText(String(card.val), cx+12, cy+4, 22, card.fg, true);
+    drawText(card.label, cx+12, cy+34, 8, card.fg, false);
   });
   cy += 52 + 10;
 
-  drawText(`Total items: ${total}`, ML, cy+10, 9, C_MUTED, false);
-  drawText(`Runtime: ${runtimeStr}`, ML+120, cy+10, 9, C_MUTED, false);
-  cy += 22;
+  drawText(`Total items: ${total}`, ML, cy+2, 9, C_MUTED, false);
+  drawText(`Runtime: ${pdfSafe(runtimeStr)}`, ML+130, cy+2, 9, C_MUTED, false);
+  cy += 20;
 
-  const ROW_H = 17;
-  const COL1 = ML, COL2 = ML+110, COL3 = ML+170, COL4 = ML+230;
+  const ROW_H = 18;
+  const COL1 = ML+4, COL2 = ML+114, COL3 = ML+174, COL4 = ML+234;
 
   const drawSection = (title, items, rowFn, color, bgColor) => {
     if (items.length === 0) return;
-    cy += 8;
-    drawRect(ML, cy, contentW, 22, bgColor, null);
-    drawRect(ML, cy, 4, 22, color, null);
-    drawText(title, ML+10, cy+5, 10, color, true);
-    drawText(`${items.length} item${items.length!==1?'s':''}`, ML+220, cy+7, 8, color, false);
-    cy += 22;
-    drawRect(ML, cy, contentW, 14, hex(226,232,240), null);
-    drawText('Item #', COL1+4, cy+3, 7.5, C_MUTED, true);
-    drawText('Order Qty', COL2+4, cy+3, 7.5, C_MUTED, true);
-    drawText('On Hand', COL3+4, cy+3, 7.5, C_MUTED, true);
-    drawText('Reason', COL4+4, cy+3, 7.5, C_MUTED, true);
-    cy += 14;
+    cy += 10;
+    // Section header
+    drawRect(ML, cy, contentW, 20, bgColor, null);
+    drawRect(ML, cy, 4, 20, color, null);
+    drawText(title, ML+10, cy+2, 10, color, true);
+    drawText(`${items.length} item${items.length!==1?'s':''}`, ML+contentW-60, cy+4, 8, color, false);
+    cy += 20;
+    // Column headers
+    drawRect(ML, cy, contentW, 13, hex(226,232,240), null);
+    drawText('Item #',    COL1, cy+1, 7, C_MUTED, true);
+    drawText('Order Qty', COL2, cy+1, 7, C_MUTED, true);
+    drawText('On Hand',   COL3, cy+1, 7, C_MUTED, true);
+    drawText('Reason',    COL4, cy+1, 7, C_MUTED, true);
+    cy += 13;
+    // Data rows
     items.forEach((item, idx) => {
       const rowBg = idx%2===0 ? C_WHITE : hex(248,250,252);
       drawRect(ML, cy, contentW, ROW_H, rowBg, null);
@@ -828,43 +849,44 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
       cy += ROW_H;
     });
     drawLine(ML, cy, ML+contentW, cy, hex(226,232,240), 0.5);
-    cy += 4;
+    cy += 6;
   };
 
   drawSection('Not Found', notFound,
     (item, ry) => {
-      drawText(item.item||'', COL1+4, ry+4, 8, C_TEXT, true);
-      drawText(item.order!=null?String(item.order):'', COL2+4, ry+4, 8, C_TEXT, false);
-      drawText(item.qoh!=null?String(item.qoh):'', COL3+4, ry+4, 8, C_TEXT, false);
-      drawText((item.reason||'Not found').slice(0,50), COL4+4, ry+4, 7.5, C_RED, false);
+      drawText(item.item||'', COL1, ry+2, 8, C_TEXT, true);
+      drawText(item.order!=null?String(item.order):'', COL2, ry+2, 8, C_TEXT, false);
+      drawText(item.qoh!=null?String(item.qoh):'', COL3, ry+2, 8, C_TEXT, false);
+      drawText((item.reason||'Not found').slice(0,52), COL4, ry+2, 7.5, C_RED, false);
     }, C_RED, C_RED_BG);
 
   drawSection('Flagged - Enter Manually', flagged,
     (item, ry) => {
-      drawText(item.item||'', COL1+4, ry+4, 8, C_TEXT, true);
-      drawText(item.qty!=null?String(item.qty):'', COL2+4, ry+4, 8, C_TEXT, false);
-      drawText('', COL3+4, ry+4, 8, C_TEXT, false);
-      drawText((item.reason||'Could not enter qty').slice(0,50), COL4+4, ry+4, 7.5, C_ORANGE, false);
+      drawText(item.item||'', COL1, ry+2, 8, C_TEXT, true);
+      drawText(item.qty!=null?String(item.qty):'', COL2, ry+2, 8, C_TEXT, false);
+      drawText('', COL3, ry+2, 8, C_TEXT, false);
+      drawText((item.reason||'Could not enter qty').slice(0,52), COL4, ry+2, 7.5, C_ORANGE, false);
     }, C_ORANGE, C_ORG_BG);
 
   drawSection('Skipped', skipped,
     (item, ry) => {
-      drawText(item.item||'', COL1+4, ry+4, 8, C_TEXT, true);
-      drawText('', COL2+4, ry+4, 8, C_TEXT, false);
-      drawText('', COL3+4, ry+4, 8, C_TEXT, false);
-      drawText((item.reason||'Skipped').slice(0,50), COL4+4, ry+4, 7.5, C_GREY, false);
+      drawText(item.item||'', COL1, ry+2, 8, C_TEXT, true);
+      drawText('', COL2, ry+2, 8, C_TEXT, false);
+      drawText('', COL3, ry+2, 8, C_TEXT, false);
+      drawText((item.reason||'Skipped').slice(0,52), COL4, ry+2, 7.5, C_GREY, false);
     }, C_GREY, C_GREY_BG);
 
   if (notFound.length===0 && flagged.length===0 && skipped.length===0) {
     cy += 20;
-    drawRect(ML, cy, contentW, 40, C_GREEN_BG, null);
-    drawText('All ' + entered.length + ' items entered successfully - no issues to report.', ML+16, cy+13, 11, C_GREEN, true);
-    cy += 40;
+    drawRect(ML, cy, contentW, 36, C_GREEN_BG, null);
+    drawText('All ' + entered.length + ' items entered successfully - no issues to report.', ML+14, cy+8, 11, C_GREEN, true);
+    cy += 36;
   }
 
-  drawLine(0, PH-30, PW, PH-30, hex(226,232,240), 0.5);
-  drawText('Project: Herald - Pet Valu Order Management', ML, PH-18, 7.5, C_MUTED, false);
-  drawText('Generated ' + new Date().toLocaleString(), PW-MR-180, PH-18, 7.5, C_MUTED, false);
+  // Footer
+  drawLine(0, PH-28, PW, PH-28, hex(226,232,240), 0.5);
+  drawText('Project: Herald - Pet Valu Order Management', ML, PH-26, 7.5, C_MUTED, false);
+  drawText('Generated ' + new Date().toLocaleString(), PW-MR-180, PH-26, 7.5, C_MUTED, false);
 
   // Assemble PDF
   const stream = cmds.join('\n');
@@ -1120,7 +1142,7 @@ async function devTestEmail() {
   const fakeTimerStart = Date.now() - (4 * 60 * 1000 + 17 * 1000);
   await setState({ phase:'complete', timerStart:fakeTimerStart, orderData:{ store:'Lakeshore Rd', operator:'Nipun' },
     results:{ entered:[{item:'10045231',qty:6,usedSub:false},{item:'10078432',qty:12,usedSub:false},{item:'10091234',qty:3,usedSub:true},{item:'10056789',qty:8,usedSub:false},{item:'10034567',qty:2,usedSub:false}],
-      skipped:[{item:'10011111',reason:'OOS'},{item:'10022222',reason:'ROS'}], notFound:[{item:'10099999',order:4,qoh:1,reason:'Not found in portal'}], flagged:[{item:'10088888',qty:5,reason:'Could not click/edit Qty cell'}] } });
+      skipped:[{item:'10011111',reason:'OOS \u2014 Out of Stock'},{item:'10022222',reason:'ROS \u2014 Ranged Out of Store'}], notFound:[{item:'10099999',order:4,qoh:1,reason:'Not found in portal'}], flagged:[{item:'10088888',qty:5,reason:'Could not click/edit Qty cell'}] } });
   localState = await getState();
   try { await sendCompletionEmail(); statusEl.style.color='var(--accent)'; statusEl.textContent='\u2713 Sent \u2014 check sarniapetvalu@gmail.com'; }
   catch(e) { statusEl.style.color='var(--red)'; statusEl.textContent='\u2717 Error: ' + e.message; }
