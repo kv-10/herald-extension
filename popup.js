@@ -736,25 +736,20 @@ function showEmailPrompt() {
 }
 
 // ── PDF GENERATOR ──
-// Sanitize text for PDF stream: replace Unicode specials with ASCII equivalents
 function pdfSafe(s) {
   return String(s)
-    .replace(/\u2014/g, ' - ')   // em dash
-    .replace(/\u2013/g, ' - ')   // en dash
-    .replace(/\u2019/g, "'")     // right single quote
-    .replace(/\u2018/g, "'")     // left single quote
-    .replace(/\u201c/g, '"')     // left double quote
-    .replace(/\u201d/g, '"')     // right double quote
-    .replace(/\u2264/g, '<=')    // less than or equal
-    .replace(/\u2265/g, '>=')    // greater than or equal
-    .replace(/[^\x00-\x7F]/g, '?'); // any remaining non-ASCII
+    .replace(/\u2014/g, ' - ').replace(/\u2013/g, ' - ')
+    .replace(/\u2019/g, "'").replace(/\u2018/g, "'")
+    .replace(/\u201c/g, '"').replace(/\u201d/g, '"')
+    .replace(/\u2264/g, '<=').replace(/\u2265/g, '>=')
+    .replace(/[^\x00-\x7F]/g, '?');
 }
 
 function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, notFound, flagged }) {
   const esc = s => pdfSafe(String(s)).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
   const hex = (r,g,b) => `${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)}`;
 
-  const PW = 595, PH = 842, ML = 48, MR = 48, MT = 48;
+  const PW = 595, PH = 842, ML = 40, MR = 40, MT = 44;
   const contentW = PW - ML - MR;
 
   const C_HEADER  = hex(15,23,42);
@@ -773,79 +768,86 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   const total = entered.length + skipped.length + notFound.length + flagged.length;
   const cmds = [];
   const c = s => cmds.push(s);
-  // PDF y=0 is bottom-left; py() converts top-down coords to PDF coords
   const py = yy => PH - yy;
 
   const drawRect = (x,yt,w,h,fill,stroke) => {
     const yb = py(yt+h);
-    if (fill)   c(`${fill} rg ${x} ${yb} ${w} ${h} re f`);
-    if (stroke) c(`${stroke} RG 0.5 w ${x} ${yb} ${w} ${h} re S`);
+    if (fill)   c(`${fill} rg ${x.toFixed(2)} ${yb.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`);
+    if (stroke) c(`${stroke} RG 0.5 w ${x.toFixed(2)} ${yb.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re S`);
   };
   const drawLine = (x1,yt1,x2,yt2,color,lw=0.5) => {
-    c(`${color} RG ${lw} w ${x1} ${py(yt1)} m ${x2} ${py(yt2)} l S`);
+    c(`${color} RG ${lw} w ${x1.toFixed(2)} ${py(yt1).toFixed(2)} m ${x2.toFixed(2)} ${py(yt2).toFixed(2)} l S`);
   };
-  // yt = top of the element; baseline = yt + descent from top
-  // For a font of size N, a good baseline offset from top = size * 0.75
+  // Vertically center text in a row: baseline = top_of_row + row_h/2 + size*0.35
+  const drawTextInRow = (txt, x, rowTop, rowH, size, color, bold) => {
+    const baseline = py(rowTop + rowH/2 + size * 0.35);
+    c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${size} Tf ${color} rg ${x.toFixed(2)} ${baseline.toFixed(2)} Td (${esc(String(txt))}) Tj ET`);
+  };
+  // For non-row text (headers etc), yt is the top of where text goes
   const drawText = (txt, x, yt, size, color, bold) => {
     const baseline = py(yt + size * 0.85);
-    c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${size} Tf ${color} rg ${x} ${baseline} Td (${esc(String(txt))}) Tj ET`);
+    c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${size} Tf ${color} rg ${x.toFixed(2)} ${baseline.toFixed(2)} Td (${esc(String(txt))}) Tj ET`);
   };
 
   let cy = MT;
 
-  // Header bar
-  drawRect(0, cy, PW, 56, C_HEADER, null);
-  drawText('Project: Herald', ML, cy+6, 18, C_WHITE, true);
-  drawText('Order Run Report', ML, cy+30, 10, hex(148,163,184), false);
-  drawText(pdfSafe(store), PW-MR-160, cy+6, 11, hex(148,163,184), false);
-  drawText(`${pdfSafe(operator)} - ${date}`, PW-MR-160, cy+24, 9, hex(100,116,139), false);
-  cy += 56 + 16;
+  // ── HEADER ──
+  const HDR_H = 62;
+  drawRect(0, cy, PW, HDR_H, C_HEADER, null);
+  drawText('Project: Herald', ML, cy+8, 20, C_WHITE, true);
+  drawText('Order Run Report', ML, cy+34, 11, hex(148,163,184), false);
+  drawText(pdfSafe(store), PW-MR-180, cy+8, 12, hex(148,163,184), false);
+  drawText(`${pdfSafe(operator)} - ${date}`, PW-MR-180, cy+26, 10, hex(100,116,139), false);
+  cy += HDR_H + 18;
 
-  // Summary cards
+  // ── SUMMARY CARDS ──
+  const CARD_H = 60;
   const cards = [
     { label:'Entered',   val:entered.length,  bg:C_GREEN_BG, fg:C_GREEN,  dot:C_GREEN  },
     { label:'Not Found', val:notFound.length, bg:C_RED_BG,   fg:C_RED,    dot:C_RED    },
     { label:'Flagged',   val:flagged.length,  bg:C_ORG_BG,   fg:C_ORANGE, dot:C_ORANGE },
     { label:'Skipped',   val:skipped.length,  bg:C_GREY_BG,  fg:C_GREY,   dot:C_GREY   },
   ];
-  const cardW = (contentW - 12) / 4;
+  const cardW = (contentW - 15) / 4;
   cards.forEach((card, i) => {
-    const cx = ML + i*(cardW+4);
-    drawRect(cx, cy, cardW, 52, card.bg, null);
-    drawRect(cx, cy, 4, 52, card.dot, null);
-    drawText(String(card.val), cx+12, cy+4, 22, card.fg, true);
-    drawText(card.label, cx+12, cy+34, 8, card.fg, false);
+    const cx = ML + i*(cardW+5);
+    drawRect(cx, cy, cardW, CARD_H, card.bg, null);
+    drawRect(cx, cy, 5, CARD_H, card.dot, null);
+    drawText(String(card.val), cx+14, cy+6, 26, card.fg, true);
+    drawText(card.label, cx+14, cy+38, 10, card.fg, false);
   });
-  cy += 52 + 10;
+  cy += CARD_H + 12;
 
-  drawText(`Total items: ${total}`, ML, cy+2, 9, C_MUTED, false);
-  drawText(`Runtime: ${pdfSafe(runtimeStr)}`, ML+130, cy+2, 9, C_MUTED, false);
-  cy += 20;
+  drawText(`Total items: ${total}`, ML, cy+2, 10, C_MUTED, false);
+  drawText(`Runtime: ${pdfSafe(runtimeStr)}`, ML+160, cy+2, 10, C_MUTED, false);
+  cy += 22;
 
-  const ROW_H = 18;
-  const COL1 = ML+4, COL2 = ML+114, COL3 = ML+174, COL4 = ML+234;
+  const ROW_H    = 24;
+  const HDR_ROW  = 18;
+  const COL1 = ML+6, COL2 = ML+130, COL3 = ML+196, COL4 = ML+260;
 
   const drawSection = (title, items, rowFn, color, bgColor) => {
     if (items.length === 0) return;
-    cy += 10;
+    cy += 12;
     // Section header
-    drawRect(ML, cy, contentW, 20, bgColor, null);
-    drawRect(ML, cy, 4, 20, color, null);
-    drawText(title, ML+10, cy+2, 10, color, true);
-    drawText(`${items.length} item${items.length!==1?'s':''}`, ML+contentW-60, cy+4, 8, color, false);
-    cy += 20;
-    // Column headers
-    drawRect(ML, cy, contentW, 13, hex(226,232,240), null);
-    drawText('Item #',    COL1, cy+1, 7, C_MUTED, true);
-    drawText('Order Qty', COL2, cy+1, 7, C_MUTED, true);
-    drawText('On Hand',   COL3, cy+1, 7, C_MUTED, true);
-    drawText('Reason',    COL4, cy+1, 7, C_MUTED, true);
-    cy += 13;
+    const SEC_H = 24;
+    drawRect(ML, cy, contentW, SEC_H, bgColor, null);
+    drawRect(ML, cy, 5, SEC_H, color, null);
+    drawTextInRow(title, ML+12, cy, SEC_H, 11, color, true);
+    drawTextInRow(`${items.length} item${items.length!==1?'s':''}`, ML+contentW-70, cy, SEC_H, 10, color, false);
+    cy += SEC_H;
+    // Column header row
+    drawRect(ML, cy, contentW, HDR_ROW, hex(226,232,240), null);
+    drawTextInRow('Item #',    COL1, cy, HDR_ROW, 8.5, C_MUTED, true);
+    drawTextInRow('Order Qty', COL2, cy, HDR_ROW, 8.5, C_MUTED, true);
+    drawTextInRow('On Hand',   COL3, cy, HDR_ROW, 8.5, C_MUTED, true);
+    drawTextInRow('Reason',    COL4, cy, HDR_ROW, 8.5, C_MUTED, true);
+    cy += HDR_ROW;
     // Data rows
     items.forEach((item, idx) => {
       const rowBg = idx%2===0 ? C_WHITE : hex(248,250,252);
       drawRect(ML, cy, contentW, ROW_H, rowBg, null);
-      rowFn(item, cy);
+      rowFn(item, cy, ROW_H);
       cy += ROW_H;
     });
     drawLine(ML, cy, ML+contentW, cy, hex(226,232,240), 0.5);
@@ -853,40 +855,40 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   };
 
   drawSection('Not Found', notFound,
-    (item, ry) => {
-      drawText(item.item||'', COL1, ry+2, 8, C_TEXT, true);
-      drawText(item.order!=null?String(item.order):'', COL2, ry+2, 8, C_TEXT, false);
-      drawText(item.qoh!=null?String(item.qoh):'', COL3, ry+2, 8, C_TEXT, false);
-      drawText((item.reason||'Not found').slice(0,52), COL4, ry+2, 7.5, C_RED, false);
+    (item, ry, rh) => {
+      drawTextInRow(item.item||'', COL1, ry, rh, 9.5, C_TEXT, true);
+      drawTextInRow(item.order!=null?String(item.order):'', COL2, ry, rh, 9.5, C_TEXT, false);
+      drawTextInRow(item.qoh!=null?String(item.qoh):'', COL3, ry, rh, 9.5, C_TEXT, false);
+      drawTextInRow((item.reason||'Not found').slice(0,52), COL4, ry, rh, 9, C_RED, false);
     }, C_RED, C_RED_BG);
 
   drawSection('Flagged - Enter Manually', flagged,
-    (item, ry) => {
-      drawText(item.item||'', COL1, ry+2, 8, C_TEXT, true);
-      drawText(item.qty!=null?String(item.qty):'', COL2, ry+2, 8, C_TEXT, false);
-      drawText('', COL3, ry+2, 8, C_TEXT, false);
-      drawText((item.reason||'Could not enter qty').slice(0,52), COL4, ry+2, 7.5, C_ORANGE, false);
+    (item, ry, rh) => {
+      drawTextInRow(item.item||'', COL1, ry, rh, 9.5, C_TEXT, true);
+      drawTextInRow(item.qty!=null?String(item.qty):'', COL2, ry, rh, 9.5, C_TEXT, false);
+      drawTextInRow('', COL3, ry, rh, 9.5, C_TEXT, false);
+      drawTextInRow((item.reason||'Could not enter qty').slice(0,52), COL4, ry, rh, 9, C_ORANGE, false);
     }, C_ORANGE, C_ORG_BG);
 
   drawSection('Skipped', skipped,
-    (item, ry) => {
-      drawText(item.item||'', COL1, ry+2, 8, C_TEXT, true);
-      drawText('', COL2, ry+2, 8, C_TEXT, false);
-      drawText('', COL3, ry+2, 8, C_TEXT, false);
-      drawText((item.reason||'Skipped').slice(0,52), COL4, ry+2, 7.5, C_GREY, false);
+    (item, ry, rh) => {
+      drawTextInRow(item.item||'', COL1, ry, rh, 9.5, C_TEXT, true);
+      drawTextInRow('', COL2, ry, rh, 9.5, C_TEXT, false);
+      drawTextInRow('', COL3, ry, rh, 9.5, C_TEXT, false);
+      drawTextInRow((item.reason||'Skipped').slice(0,52), COL4, ry, rh, 9, C_GREY, false);
     }, C_GREY, C_GREY_BG);
 
   if (notFound.length===0 && flagged.length===0 && skipped.length===0) {
     cy += 20;
-    drawRect(ML, cy, contentW, 36, C_GREEN_BG, null);
-    drawText('All ' + entered.length + ' items entered successfully - no issues to report.', ML+14, cy+8, 11, C_GREEN, true);
-    cy += 36;
+    drawRect(ML, cy, contentW, 40, C_GREEN_BG, null);
+    drawTextInRow('All ' + entered.length + ' items entered successfully - no issues to report.', ML+14, cy, 40, 12, C_GREEN, true);
+    cy += 40;
   }
 
   // Footer
-  drawLine(0, PH-28, PW, PH-28, hex(226,232,240), 0.5);
-  drawText('Project: Herald - Pet Valu Order Management', ML, PH-26, 7.5, C_MUTED, false);
-  drawText('Generated ' + new Date().toLocaleString(), PW-MR-180, PH-26, 7.5, C_MUTED, false);
+  drawLine(0, PH-32, PW, PH-32, hex(226,232,240), 0.5);
+  drawText('Project: Herald - Pet Valu Order Management', ML, PH-30, 8, C_MUTED, false);
+  drawText('Generated ' + new Date().toLocaleString(), PW-MR-200, PH-30, 8, C_MUTED, false);
 
   // Assemble PDF
   const stream = cmds.join('\n');
