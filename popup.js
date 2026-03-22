@@ -455,13 +455,12 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   const PAGE_BOTTOM=PH-FOOTER_H-6;
   const ROW_H=24, HDR_ROW=18, SEC_H=24;
 
-  // ── 5-column layout: Item# | Description | Order Qty | On Hand | Reason ──
-  // Description gets the most space since product names can be long
-  const COL1=ML+6;          // Item #      (width ~80)
-  const COL2=ML+88;         // Description (width ~170)
-  const COL3=ML+262;        // Order Qty   (width ~52)
-  const COL4=ML+318;        // On Hand     (width ~52)
-  const COL5=ML+374;        // Reason      (remaining ~133)
+  // 5-column layout: Item # | Description | Order | On Hand | Reason
+  const COL1=ML+6;    // Item #      (~80px wide)
+  const COL2=ML+88;   // Description (~170px wide)
+  const COL3=ML+262;  // Order       (~52px wide)
+  const COL4=ML+318;  // On Hand     (~52px wide)
+  const COL5=ML+374;  // Reason      (~remaining)
 
   const pages = []; let cmds = [];
   const c = s => cmds.push(s);
@@ -533,13 +532,12 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
     dTextR(title,ML+12,cy[0],SEC_H,11,color,true);
     dTextR(`${items.length} item${items.length!==1?'s':''}`,ML+contentW-68,cy[0],SEC_H,9.5,color,false);
     cy[0]+=SEC_H;
-    // Column headers
     dRect(ML,cy[0],contentW,HDR_ROW,hex(226,232,240));
-    dTextR('Item #',       COL1,cy[0],HDR_ROW,8,C_MUTED,true);
-    dTextR('Description',  COL2,cy[0],HDR_ROW,8,C_MUTED,true);
-    dTextR('Order',        COL3,cy[0],HDR_ROW,8,C_MUTED,true);
-    dTextR('On Hand',      COL4,cy[0],HDR_ROW,8,C_MUTED,true);
-    dTextR('Reason',       COL5,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('Item #',      COL1,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('Description', COL2,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('Order',       COL3,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('On Hand',     COL4,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('Reason',      COL5,cy[0],HDR_ROW,8,C_MUTED,true);
     cy[0]+=HDR_ROW;
     items.forEach((item,idx) => {
       checkBreak(ROW_H);
@@ -549,7 +547,6 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
     dLine(ML,cy[0],ML+contentW,cy[0],C_BORDER); cy[0]+=6;
   };
 
-  // Truncate description to fit column (~25 chars at 8.5pt)
   const desc = (item) => (item.desc||'').slice(0,28);
 
   drawFirstHeader(); drawFooter(1);
@@ -626,7 +623,7 @@ async function sendCompletionEmail() {
   const store=od.store||'Unknown Store', operator=od.operator||'Unknown', date=new Date().toLocaleDateString('en-CA');
   setEmailStatus('sending');
   const timerStart=localState?.timerStart; let runtimeStr='N/A';
-  if(timerStart){const s=Math.floor((Date.now()-timerStart)/1000);runtimeStr=`${Math.floor(s/60)}m ${String(s%60).padStart(2,'00')}s`;}
+  if(timerStart){const s=Math.floor((Date.now()-timerStart)/1000);runtimeStr=`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`;}
   const entered=r.entered||[], skipped=r.skipped||[], notFound=r.notFound||[], flagged=r.flagged||[];
   const pdfBase64=buildReportPDF({store,operator,date,runtimeStr,entered,skipped,notFound,flagged});
   const payload={action:'sendEmail',store,operator,date,runtime:runtimeStr,entered:entered.length,skipped:skipped.length,notFound:notFound.length,flagged:flagged.length,total:entered.length+skipped.length+notFound.length+flagged.length,pdfBase64,filename:`petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`};
@@ -681,12 +678,12 @@ async function botScript(orderData, timings, runId) {
   function getAgApi(){try{const agGridEl=document.querySelector('ag-grid-angular');if(!agGridEl)return null;const inst=agGridEl['__ag_grid_instance'];if(inst?.api?.forEachNodeAfterFilter)return inst.api;if(inst?.forEachNodeAfterFilter)return inst;if(inst?.gridOptions?.api?.forEachNodeAfterFilter)return inst.gridOptions.api;}catch(e){console.log('[PV Bot] getAgApi error:',e);}return null;}
   function getRowDataFromGrid(itemId){try{const api=getAgApi();if(!api)return null;let found=null;api.forEachNodeAfterFilter(node=>{if(found)return;const d=node.data;if(d&&String(d.item_no||'').trim().toLowerCase()===String(itemId).trim().toLowerCase())found=d;});return found;}catch(e){return null;}}
 
-  // ── Read item description from portal row ──
-  // Tries multiple possible col-ids since the exact name depends on portal version
+  // ── Read item description: col-id confirmed as "item_name" in the Pet Valu portal ──
   function getItemDescription(row, gridData) {
-    const candidates = ['item_description','description','item_name','product_description','desc','item_desc'];
+    // item_name is the confirmed col-id; fallbacks kept for safety
+    const candidates = ['item_name','item_description','description','product_description','desc','item_desc'];
     for (const col of candidates) {
-      const v = gridData?.[col] || getCellText(row, col);
+      const v = (gridData && gridData[col]) || getCellText(row, col);
       if (v && v.trim()) return v.trim();
     }
     return '';
@@ -732,9 +729,9 @@ async function devTestEmail() {
   const fakeTimerStart=Date.now()-(4*60*1000+17*1000);
   await setState({phase:'complete',timerStart:fakeTimerStart,orderData:{store:'Lakeshore Rd',operator:'Nipun'},results:{
     entered:[{item:'10045231',qty:6,usedSub:false,desc:'Purina Dog Chow'},{item:'10078432',qty:12,usedSub:false,desc:'Royal Canin Indoor'}],
-    skipped:[{item:'10011111',desc:'Whiskas Tuna Treats',reason:'OOS \u2014 Out of Stock'},{item:'10022222',desc:'Pedigree Dental',reason:'ROS \u2014 Ranged Out of Store'}],
+    skipped:[{item:'10011111',desc:'Whiskas Tuna Treats',reason:'OOS \u2014 Out of Stock'},{item:'10022222',desc:'Pedigree Dental Stix',reason:'ROS \u2014 Ranged Out of Store'}],
     notFound:[{item:'10099999',order:4,qoh:1,desc:'',reason:'Not found in portal'}],
-    flagged:[{item:'10088888',qty:5,desc:'Hill\'s Science Diet',reason:'Could not click/edit Qty cell'}]
+    flagged:[{item:'10088888',qty:5,desc:"Hill's Science Diet",reason:'Could not click/edit Qty cell'}]
   }});
   localState=await getState();
   try{await sendCompletionEmail();statusEl.style.color='var(--accent)';statusEl.textContent='\u2713 Sent \u2014 check sarniapetvalu@gmail.com';}
