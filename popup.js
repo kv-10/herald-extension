@@ -444,7 +444,7 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
 
   const PW=595, PH=842, ML=44, MR=44; const contentW=PW-ML-MR;
 
-  const C_INK=hex(15,23,42), C_INK2=hex(22,34,56), C_TEXT=hex(30,41,59), C_MUTED=hex(100,116,139), C_BORDER=hex(226,232,240), ACCENT=hex(0,180,130);
+  const C_INK=hex(15,23,42), C_TEXT=hex(30,41,59), C_MUTED=hex(100,116,139), C_BORDER=hex(226,232,240), ACCENT=hex(0,180,130);
   const C_GREEN=hex(22,163,74), C_GREEN_BG=hex(220,252,231), C_GREEN_BAR=hex(22,163,74);
   const C_AMBER=hex(161,80,0), C_AMBER_BG=hex(254,243,199), C_AMBER_BAR=hex(200,120,0);
   const C_RED=hex(185,28,28), C_RED_BG=hex(254,226,226), C_RED_BAR=hex(220,38,38);
@@ -454,7 +454,14 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   const FOOTER_H=26, FIRST_HDR_H=108, CONT_HDR_H=28;
   const PAGE_BOTTOM=PH-FOOTER_H-6;
   const ROW_H=24, HDR_ROW=18, SEC_H=24;
-  const COL1=ML+6, COL2=ML+132, COL3=ML+198, COL4=ML+262;
+
+  // ── 5-column layout: Item# | Description | Order Qty | On Hand | Reason ──
+  // Description gets the most space since product names can be long
+  const COL1=ML+6;          // Item #      (width ~80)
+  const COL2=ML+88;         // Description (width ~170)
+  const COL3=ML+262;        // Order Qty   (width ~52)
+  const COL4=ML+318;        // On Hand     (width ~52)
+  const COL5=ML+374;        // Reason      (remaining ~133)
 
   const pages = []; let cmds = [];
   const c = s => cmds.push(s);
@@ -503,7 +510,7 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
     });
   };
 
-  const drawContHeader = (pgNum) => {
+  const drawContHeader = () => {
     dRect(0,0,PW,CONT_HDR_H,C_INK); dRect(0,0,4,CONT_HDR_H,ACCENT);
     dTextR('Project: Herald',ML+10,0,CONT_HDR_H,9,hex(200,215,230),true);
     dTextR(`${pdfSafe(store)}  /  ${date}`,PW/2-40,0,CONT_HDR_H,8.5,hex(100,130,150),false);
@@ -515,7 +522,7 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   const checkBreak = (needed) => {
     if (cy[0]+needed > PAGE_BOTTOM) {
       drawFooter(pgNum[0]); newPage(); pgNum[0]++;
-      drawContHeader(pgNum[0]); drawFooter(pgNum[0]); cy[0]=CONT_HDR_H+14;
+      drawContHeader(); drawFooter(pgNum[0]); cy[0]=CONT_HDR_H+14;
     }
   };
 
@@ -526,8 +533,13 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
     dTextR(title,ML+12,cy[0],SEC_H,11,color,true);
     dTextR(`${items.length} item${items.length!==1?'s':''}`,ML+contentW-68,cy[0],SEC_H,9.5,color,false);
     cy[0]+=SEC_H;
+    // Column headers
     dRect(ML,cy[0],contentW,HDR_ROW,hex(226,232,240));
-    dTextR('Item #',COL1,cy[0],HDR_ROW,8.5,C_MUTED,true); dTextR('Order Qty',COL2,cy[0],HDR_ROW,8.5,C_MUTED,true); dTextR('On Hand',COL3,cy[0],HDR_ROW,8.5,C_MUTED,true); dTextR('Reason',COL4,cy[0],HDR_ROW,8.5,C_MUTED,true);
+    dTextR('Item #',       COL1,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('Description',  COL2,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('Order',        COL3,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('On Hand',      COL4,cy[0],HDR_ROW,8,C_MUTED,true);
+    dTextR('Reason',       COL5,cy[0],HDR_ROW,8,C_MUTED,true);
     cy[0]+=HDR_ROW;
     items.forEach((item,idx) => {
       checkBreak(ROW_H);
@@ -537,11 +549,34 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
     dLine(ML,cy[0],ML+contentW,cy[0],C_BORDER); cy[0]+=6;
   };
 
+  // Truncate description to fit column (~25 chars at 8.5pt)
+  const desc = (item) => (item.desc||'').slice(0,28);
+
   drawFirstHeader(); drawFooter(1);
 
-  drawSection('Skipped',skipped,(item,ry,rh)=>{dTextR(item.item||'',COL1,ry,rh,9.5,C_TEXT,true);dTextR('',COL2,ry,rh,9.5,C_TEXT,false);dTextR('',COL3,ry,rh,9.5,C_TEXT,false);dTextR((item.reason||'Skipped').slice(0,54),COL4,ry,rh,9,C_AMBER,false);},C_AMBER_BAR,C_AMBER_BG);
-  drawSection('Not Found',notFound,(item,ry,rh)=>{dTextR(item.item||'',COL1,ry,rh,9.5,C_TEXT,true);dTextR(item.order!=null?String(item.order):'',COL2,ry,rh,9.5,C_TEXT,false);dTextR(item.qoh!=null?String(item.qoh):'',COL3,ry,rh,9.5,C_TEXT,false);dTextR((item.reason||'Not found').slice(0,54),COL4,ry,rh,9,C_RED,false);},C_RED_BAR,C_RED_BG);
-  drawSection('Flagged - Enter Manually',flagged,(item,ry,rh)=>{dTextR(item.item||'',COL1,ry,rh,9.5,C_TEXT,true);dTextR(item.qty!=null?String(item.qty):'',COL2,ry,rh,9.5,C_TEXT,false);dTextR('',COL3,ry,rh,9.5,C_TEXT,false);dTextR((item.reason||'').slice(0,54),COL4,ry,rh,9,C_BLUE,false);},C_BLUE_BAR,C_BLUE_BG);
+  drawSection('Skipped',skipped,(item,ry,rh)=>{
+    dTextR(item.item||'',COL1,ry,rh,9,C_TEXT,true);
+    dTextR(desc(item),COL2,ry,rh,8.5,C_MUTED,false);
+    dTextR('',COL3,ry,rh,9,C_TEXT,false);
+    dTextR('',COL4,ry,rh,9,C_TEXT,false);
+    dTextR((item.reason||'Skipped').slice(0,38),COL5,ry,rh,8.5,C_AMBER,false);
+  },C_AMBER_BAR,C_AMBER_BG);
+
+  drawSection('Not Found',notFound,(item,ry,rh)=>{
+    dTextR(item.item||'',COL1,ry,rh,9,C_TEXT,true);
+    dTextR(desc(item),COL2,ry,rh,8.5,C_MUTED,false);
+    dTextR(item.order!=null?String(item.order):'',COL3,ry,rh,9,C_TEXT,false);
+    dTextR(item.qoh!=null?String(item.qoh):'',COL4,ry,rh,9,C_TEXT,false);
+    dTextR((item.reason||'Not found').slice(0,38),COL5,ry,rh,8.5,C_RED,false);
+  },C_RED_BAR,C_RED_BG);
+
+  drawSection('Flagged - Enter Manually',flagged,(item,ry,rh)=>{
+    dTextR(item.item||'',COL1,ry,rh,9,C_TEXT,true);
+    dTextR(desc(item),COL2,ry,rh,8.5,C_MUTED,false);
+    dTextR(item.qty!=null?String(item.qty):'',COL3,ry,rh,9,C_TEXT,false);
+    dTextR('',COL4,ry,rh,9,C_TEXT,false);
+    dTextR((item.reason||'').slice(0,38),COL5,ry,rh,8.5,C_BLUE,false);
+  },C_BLUE_BAR,C_BLUE_BG);
 
   if (!notFound.length&&!flagged.length&&!skipped.length) {
     checkBreak(50); cy[0]+=20;
@@ -553,10 +588,6 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
 
   // ── BUILD MULTI-PAGE PDF ──
   const totalPages = pages.length;
-  const parts = []; const offsets = {};
-  const addObj = (n,body) => { offsets[n]=parts.reduce((s,p)=>s+p.length,0); parts.push(`${n} 0 obj\n`.encode?`${n} 0 obj\n${body}\nendobj\n`:`${n} 0 obj\n${body}\nendobj\n`); };
-
-  // Build as string then convert once
   let pdfStr = '%PDF-1.4\n';
   const objOff = {};
   const addO = (n,body) => { objOff[n]=pdfStr.length; pdfStr+=`${n} 0 obj\n${body}\nendobj\n`; };
@@ -584,7 +615,6 @@ function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, n
   for(let i=1;i<=catalogId;i++) pdfStr+=String(objOff[i]||0).padStart(10,'0')+' 00000 n \n';
   pdfStr+=`trailer\n<< /Size ${catalogId+1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOff}\n%%EOF`;
 
-  // Base64 encode
   const bytes=unescape(encodeURIComponent(pdfStr));
   let b64=''; const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   for(let i=0;i<bytes.length;i+=3){const b=[bytes.charCodeAt(i),bytes.charCodeAt(i+1)||0,bytes.charCodeAt(i+2)||0];const chunk=(b[0]<<16)|(b[1]<<8)|b[2];b64+=chars[(chunk>>18)&63]+chars[(chunk>>12)&63]+(i+1<bytes.length?chars[(chunk>>6)&63]:'=')+(i+2<bytes.length?chars[chunk&63]:'=');}
@@ -596,7 +626,7 @@ async function sendCompletionEmail() {
   const store=od.store||'Unknown Store', operator=od.operator||'Unknown', date=new Date().toLocaleDateString('en-CA');
   setEmailStatus('sending');
   const timerStart=localState?.timerStart; let runtimeStr='N/A';
-  if(timerStart){const s=Math.floor((Date.now()-timerStart)/1000);runtimeStr=`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`;}
+  if(timerStart){const s=Math.floor((Date.now()-timerStart)/1000);runtimeStr=`${Math.floor(s/60)}m ${String(s%60).padStart(2,'00')}s`;}
   const entered=r.entered||[], skipped=r.skipped||[], notFound=r.notFound||[], flagged=r.flagged||[];
   const pdfBase64=buildReportPDF({store,operator,date,runtimeStr,entered,skipped,notFound,flagged});
   const payload={action:'sendEmail',store,operator,date,runtime:runtimeStr,entered:entered.length,skipped:skipped.length,notFound:notFound.length,flagged:flagged.length,total:entered.length+skipped.length+notFound.length+flagged.length,pdfBase64,filename:`petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`};
@@ -650,6 +680,18 @@ async function botScript(orderData, timings, runId) {
   function getCellText(row,colId){let c=row.querySelector(`[col-id="${colId}"]`);if(c)return c.textContent.trim();const rowId=row.getAttribute('row-id');if(rowId!==null){c=document.querySelector(`.ag-center-cols-container [row-id="${rowId}"] [col-id="${colId}"]`)||document.querySelector(`.ag-pinned-left-cols-container [row-id="${rowId}"] [col-id="${colId}"]`)||document.querySelector(`[row-id="${rowId}"] [col-id="${colId}"]`);if(c)return c.textContent.trim();}return '';}
   function getAgApi(){try{const agGridEl=document.querySelector('ag-grid-angular');if(!agGridEl)return null;const inst=agGridEl['__ag_grid_instance'];if(inst?.api?.forEachNodeAfterFilter)return inst.api;if(inst?.forEachNodeAfterFilter)return inst;if(inst?.gridOptions?.api?.forEachNodeAfterFilter)return inst.gridOptions.api;}catch(e){console.log('[PV Bot] getAgApi error:',e);}return null;}
   function getRowDataFromGrid(itemId){try{const api=getAgApi();if(!api)return null;let found=null;api.forEachNodeAfterFilter(node=>{if(found)return;const d=node.data;if(d&&String(d.item_no||'').trim().toLowerCase()===String(itemId).trim().toLowerCase())found=d;});return found;}catch(e){return null;}}
+
+  // ── Read item description from portal row ──
+  // Tries multiple possible col-ids since the exact name depends on portal version
+  function getItemDescription(row, gridData) {
+    const candidates = ['item_description','description','item_name','product_description','desc','item_desc'];
+    for (const col of candidates) {
+      const v = gridData?.[col] || getCellText(row, col);
+      if (v && v.trim()) return v.trim();
+    }
+    return '';
+  }
+
   function calcQty(appOrder,appQoh,avgSales,multiple,isCases){let order=appOrder;if(isCases&&order>0)order=order*multiple;let qty;if(order===0){if(avgSales===0)return{qty:null,reason:'Skipped \u2014 avg sales is 0'};qty=Math.ceil(avgSales*4-appQoh);if(qty<=0)return{qty:null,reason:`Skipped \u2014 already have enough on hand (avg=${avgSales}, qoh=${appQoh})`};}else{qty=order;if(qty<=0)return{qty:null,reason:'Skipped \u2014 order qty \u2264 0'};}if(multiple>1){const rem=qty%multiple;if(rem!==0)qty+=(multiple-rem);}return{qty};}
   async function enterQty(row,qty){const cell=row.querySelector('[col-id="unit_qty_chg"]');if(!cell)return false;cell.click();await sleep(250);cell.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true,view:window}));await sleep(400);let input=cell.querySelector('input[aria-label="Input Editor"]')||cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');if(!input){cell.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',keyCode:113,bubbles:true}));await sleep(350);input=cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');}if(!input)return false;input.focus();input.select();input.value=String(qty);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));input.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',keyCode:9,bubbles:true}));await sleep(timings.afterQty);return true;}
 
@@ -661,19 +703,20 @@ async function botScript(orderData, timings, runId) {
     await setFilter('Item No Filter Input',id); await sleep(timings.afterFilter);
     let rows=getVisibleRows(),targetRow=findExactRow(rows,id),usedSub=false;
     if(!targetRow){sendProgress(`${id} \u2014 not in Item No, trying Substituted Item...`,i,items.length,'info',results);await clearFilter('Item No Filter Input',true);await setFilter('Substituted Item Filter Input',id);await sleep(timings.afterSubFilter??timings.afterFilter);rows=getVisibleRows();targetRow=rows.length>0?rows[0]:null;usedSub=true;}
-    if(!targetRow){results.notFound.push({item:id,order:item.order,qoh:item.qoh,reason:'Not found (checked Item No + Substituted Item)'});sendProgress(`${id} \u2014 NOT FOUND`,i+1,items.length,'notfound',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
+    if(!targetRow){results.notFound.push({item:id,order:item.order,qoh:item.qoh,desc:'',reason:'Not found (checked Item No + Substituted Item)'});sendProgress(`${id} \u2014 NOT FOUND`,i+1,items.length,'notfound',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const lifecycle=getCellText(targetRow,'life_cycle_status');
     const lifecycleReasons={'OOS':'OOS \u2014 Out of Stock','ROS':'ROS \u2014 Ranged Out of Store','INOT':'INOT \u2014 Inactive / Not On Tag'};
-    if(lifecycleReasons[lifecycle]){results.skipped.push({item:id,reason:lifecycleReasons[lifecycle]});sendProgress(`${id} \u2014 skipped (${lifecycleReasons[lifecycle]})`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const gridData=getRowDataFromGrid(id);
+    const itemDesc=getItemDescription(targetRow,gridData);
+    if(lifecycleReasons[lifecycle]){results.skipped.push({item:id,desc:itemDesc,reason:lifecycleReasons[lifecycle]});sendProgress(`${id} \u2014 skipped (${lifecycleReasons[lifecycle]})`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const avgSales=parseFloat(gridData?.average_sales_last_4_weeks??getCellText(targetRow,'average_sales_last_4_weeks'))||0;
     const multiple=parseInt(gridData?.order_multiple??getCellText(targetRow,'order_multiple'))||1;
     const isCases=item.order<0||item.cases===true,absOrder=Math.abs(item.order);
     const calcResult=calcQty(absOrder,item.qoh,avgSales,multiple,isCases);
-    if(calcResult.qty===null){results.skipped.push({item:id,reason:calcResult.reason});sendProgress(`${id} \u2014 ${calcResult.reason}`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
+    if(calcResult.qty===null){results.skipped.push({item:id,desc:itemDesc,reason:calcResult.reason});sendProgress(`${id} \u2014 ${calcResult.reason}`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const qty=calcResult.qty, ok=await enterQty(targetRow,qty);
-    if(ok){results.entered.push({item:id,qty,usedSub});sendProgress(`${id} \u2014 entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);}
-    else{results.flagged.push({item:id,qty,reason:'Could not click/edit Qty cell'});sendProgress(`${id} \u2014 FLAGGED (enter ${qty} manually)`,i+1,items.length,'flag',results);}
+    if(ok){results.entered.push({item:id,qty,usedSub,desc:itemDesc});sendProgress(`${id} \u2014 entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);}
+    else{results.flagged.push({item:id,qty,desc:itemDesc,reason:'Could not click/edit Qty cell'});sendProgress(`${id} \u2014 FLAGGED (enter ${qty} manually)`,i+1,items.length,'flag',results);}
     await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true); await sleep(timings.betweenItems);
   }
   chrome.runtime.sendMessage({type:'PV_COMPLETE',results,runId,wasStopped:results._stopped||false});
@@ -687,7 +730,12 @@ async function devTestEmail() {
   const statusEl=document.getElementById('devEmailStatus');
   statusEl.style.color='var(--muted)';statusEl.textContent='Injecting state and calling sendCompletionEmail()...';
   const fakeTimerStart=Date.now()-(4*60*1000+17*1000);
-  await setState({phase:'complete',timerStart:fakeTimerStart,orderData:{store:'Lakeshore Rd',operator:'Nipun'},results:{entered:[{item:'10045231',qty:6,usedSub:false},{item:'10078432',qty:12,usedSub:false},{item:'10091234',qty:3,usedSub:true},{item:'10056789',qty:8,usedSub:false},{item:'10034567',qty:2,usedSub:false}],skipped:[{item:'10011111',reason:'OOS \u2014 Out of Stock'},{item:'10022222',reason:'ROS \u2014 Ranged Out of Store'}],notFound:[{item:'10099999',order:4,qoh:1,reason:'Not found in portal'}],flagged:[{item:'10088888',qty:5,reason:'Could not click/edit Qty cell'}]}});
+  await setState({phase:'complete',timerStart:fakeTimerStart,orderData:{store:'Lakeshore Rd',operator:'Nipun'},results:{
+    entered:[{item:'10045231',qty:6,usedSub:false,desc:'Purina Dog Chow'},{item:'10078432',qty:12,usedSub:false,desc:'Royal Canin Indoor'}],
+    skipped:[{item:'10011111',desc:'Whiskas Tuna Treats',reason:'OOS \u2014 Out of Stock'},{item:'10022222',desc:'Pedigree Dental',reason:'ROS \u2014 Ranged Out of Store'}],
+    notFound:[{item:'10099999',order:4,qoh:1,desc:'',reason:'Not found in portal'}],
+    flagged:[{item:'10088888',qty:5,desc:'Hill\'s Science Diet',reason:'Could not click/edit Qty cell'}]
+  }});
   localState=await getState();
   try{await sendCompletionEmail();statusEl.style.color='var(--accent)';statusEl.textContent='\u2713 Sent \u2014 check sarniapetvalu@gmail.com';}
   catch(e){statusEl.style.color='var(--red)';statusEl.textContent='\u2717 Error: '+e.message;}
