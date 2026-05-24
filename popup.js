@@ -433,104 +433,135 @@ function showEmailPrompt() {
   document.getElementById('emailPromptNo').addEventListener('click',  () => { el.innerHTML=''; el.style.display='none'; });
 }
 
-// ── PDF GENERATOR ──
-function pdfSafe(s) {
-  return String(s).replace(/\u2014/g,' - ').replace(/\u2013/g,' - ').replace(/\u2019/g,"'").replace(/\u2018/g,"'").replace(/\u201c/g,'"').replace(/\u201d/g,'"').replace(/\u2264/g,'<=').replace(/\u2265/g,'>=').replace(/[^\x00-\x7F]/g,'?');
-}
+// ── HTML REPORT BUILDER ──
+function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, flagged, orderTotal }) {
+  const storeNum = { 'Lakeshore Rd':'2087', 'Lambton Mall':'2356', 'Corunna':'2372', 'London':'2412' }[store] || '';
+  const storeNumHtml = storeNum ? `<span style="font-family:'Courier New',monospace;font-size:13px;font-weight:500;color:#555;margin-left:10px">#${storeNum}</span>` : '';
+  const fmtCAD = n => n > 0 ? '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' CAD' : '';
+  const totalStr = fmtCAD(orderTotal || 0);
 
-function buildReportPDF({ store, operator, date, runtimeStr, entered, skipped, notFound, flagged }) {
-  const esc = s => pdfSafe(String(s)).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
-  const hex = (r,g,b) => `${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)}`;
-  const PW=595, PH=842, ML=44, MR=44; const contentW=PW-ML-MR;
-  const C_INK=hex(15,23,42), C_TEXT=hex(30,41,59), C_MUTED=hex(100,116,139), C_BORDER=hex(226,232,240), ACCENT=hex(0,180,130);
-  const C_GREEN=hex(22,163,74), C_GREEN_BG=hex(220,252,231), C_GREEN_BAR=hex(22,163,74);
-  const C_AMBER=hex(161,80,0), C_AMBER_BG=hex(254,243,199), C_AMBER_BAR=hex(200,120,0);
-  const C_RED=hex(185,28,28), C_RED_BG=hex(254,226,226), C_RED_BAR=hex(220,38,38);
-  const C_BLUE=hex(29,78,216), C_BLUE_BG=hex(219,234,254), C_BLUE_BAR=hex(37,99,235);
-  const C_WHITE=hex(255,255,255);
-  const FOOTER_H=26, FIRST_HDR_H=108, CONT_HDR_H=28;
-  const PAGE_BOTTOM=PH-FOOTER_H-6;
-  const ROW_H=24, HDR_ROW=18, SEC_H=24;
-  const COL1=ML+6; const COL2=ML+88; const COL3=ML+262; const COL4=ML+318; const COL5=ML+374;
-  const pages = []; let cmds = [];
-  const c = s => cmds.push(s);
-  const py = yy => PH-yy;
-  const newPage = () => { pages.push(cmds); cmds = []; };
-  const dRect = (x,yt,w,h,fill,stroke) => { const yb=py(yt+h); if(fill) c(`${fill} rg ${x.toFixed(2)} ${yb.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`); if(stroke) c(`${stroke} RG 0.5 w ${x.toFixed(2)} ${yb.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re S`); };
-  const dLine = (x1,yt1,x2,yt2,col,lw=0.5) => c(`${col} RG ${lw} w ${x1.toFixed(2)} ${py(yt1).toFixed(2)} m ${x2.toFixed(2)} ${py(yt2).toFixed(2)} l S`);
-  const dText = (txt,x,yt,sz,col,bold) => { const bl=py(yt+sz*0.85); c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${sz} Tf ${col} rg ${x.toFixed(2)} ${bl.toFixed(2)} Td (${esc(String(txt))}) Tj ET`); };
-  const dTextR = (txt,x,rt,rh,sz,col,bold) => { const bl=py(rt+rh/2+sz*0.35); c(`BT /${bold?'Helvetica-Bold':'Helvetica'} ${sz} Tf ${col} rg ${x.toFixed(2)} ${bl.toFixed(2)} Td (${esc(String(txt))}) Tj ET`); };
-  const total = entered.length+skipped.length+notFound.length+flagged.length;
-  const drawFooter = (pgNum) => { dRect(0,PH-FOOTER_H,PW,FOOTER_H,hex(248,250,252)); dLine(0,PH-FOOTER_H,PW,PH-FOOTER_H,C_BORDER,0.5); dText('Project: Herald',ML,PH-FOOTER_H+5,7.5,C_MUTED,false); dText(`${pdfSafe(store)}  /  ${date}`,PW/2-50,PH-FOOTER_H+5,7.5,C_MUTED,false); dText(`Page ${pgNum}`,PW-MR-36,PH-FOOTER_H+5,7.5,C_MUTED,false); };
-  const drawFirstHeader = () => {
-    dRect(0,0,PW,FIRST_HDR_H,C_INK); dRect(0,0,4,FIRST_HDR_H,ACCENT);
-    const TOP_H=58;
-    dText('Project: Herald',ML+12,9,19,hex(255,255,255),true);
-    dText(`${total} items`,ML+12,34,11,hex(200,220,210),true);
-    dText(`Runtime: ${pdfSafe(runtimeStr)}`,ML+90,34,11,hex(160,190,180),false);
-    dLine(0,TOP_H,PW,TOP_H,hex(32,50,70),0.8);
-    const RX=ML+contentW-200;
-    dText(pdfSafe(store),RX,8,15,hex(255,255,255),true);
-    dText(date,RX,29,10,hex(140,170,160),true);
-    const card_y=TOP_H+6, card_h=FIRST_HDR_H-TOP_H-10, card_gap=6, card_w=(contentW-3*card_gap)/4;
-    const stats=[['Entered',entered.length,C_GREEN_BAR,hex(230,255,240),C_GREEN],['Skipped',skipped.length,C_AMBER_BAR,hex(255,248,220),C_AMBER],['Not Found',notFound.length,C_RED_BAR,hex(255,235,235),C_RED],['Flagged',flagged.length,C_BLUE_BAR,hex(230,238,255),C_BLUE]];
-    stats.forEach(([label,val,bar,bg,fg],i) => { const cx=ML+i*(card_w+card_gap); dRect(cx,card_y,card_w,card_h,bg); dRect(cx,card_y,4,card_h,bar); dText(String(val),cx+12,card_y+3,18,fg,true); dText(label,cx+12,card_y+card_h-13,8,fg,false); });
+  const escHtml = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  const reasonText = (item) => {
+    const r = item.reason || '';
+    if (r.includes('OOS')) return 'OOS';
+    if (r.includes('ROS')) return 'ROS';
+    if (r.includes('INOT')) return 'INOT';
+    if (r.includes('avg sales is 0') || r.includes('avg sales')) return 'No sales, 4 weeks';
+    if (r.includes('enough on hand')) return 'Enough on hand';
+    if (r.includes('Not found')) return 'Not in portal';
+    if (r.includes('Could not')) return 'Could not enter';
+    return escHtml(r.slice(0, 40));
   };
-  const drawContHeader = () => { dRect(0,0,PW,CONT_HDR_H,C_INK); dRect(0,0,4,CONT_HDR_H,ACCENT); dTextR('Project: Herald',ML+10,0,CONT_HDR_H,9,hex(200,215,230),true); dTextR(`${pdfSafe(store)}  /  ${date}`,PW/2-40,0,CONT_HDR_H,8.5,hex(100,130,150),false); dTextR('continued',PW-MR-55,0,CONT_HDR_H,8,hex(80,110,130),false); };
-  let cy=[FIRST_HDR_H+16], pgNum=[1];
-  const checkBreak = (needed) => { if (cy[0]+needed > PAGE_BOTTOM) { drawFooter(pgNum[0]); newPage(); pgNum[0]++; drawContHeader(); drawFooter(pgNum[0]); cy[0]=CONT_HDR_H+14; } };
-  const drawSection = (title, items, rowFn, color, bgColor) => {
-    if (!items.length) return;
-    checkBreak(SEC_H+HDR_ROW+ROW_H); cy[0]+=12;
-    dRect(ML,cy[0],contentW,SEC_H,bgColor); dRect(ML,cy[0],4,SEC_H,color);
-    dTextR(title,ML+12,cy[0],SEC_H,11,color,true);
-    dTextR(`${items.length} item${items.length!==1?'s':''}`,ML+contentW-68,cy[0],SEC_H,9.5,color,false);
-    cy[0]+=SEC_H;
-    dRect(ML,cy[0],contentW,HDR_ROW,hex(226,232,240));
-    dTextR('Item #',COL1,cy[0],HDR_ROW,8,C_MUTED,true); dTextR('Description',COL2,cy[0],HDR_ROW,8,C_MUTED,true); dTextR('Order',COL3,cy[0],HDR_ROW,8,C_MUTED,true); dTextR('On Hand',COL4,cy[0],HDR_ROW,8,C_MUTED,true); dTextR('Reason',COL5,cy[0],HDR_ROW,8,C_MUTED,true);
-    cy[0]+=HDR_ROW;
-    items.forEach((item,idx) => { checkBreak(ROW_H); dRect(ML,cy[0],contentW,ROW_H,idx%2===0?C_WHITE:hex(248,250,252)); rowFn(item,cy[0],ROW_H); cy[0]+=ROW_H; });
-    dLine(ML,cy[0],ML+contentW,cy[0],C_BORDER); cy[0]+=6;
+
+  const reasonColor = (item) => {
+    const r = item.reason || '';
+    if (r.includes('OOS') || r.includes('Not found')) return '#b91c1c';
+    if (r.includes('ROS')) return '#b45309';
+    if (r.includes('INOT')) return '#1d4ed8';
+    return '#444';
   };
-  const desc = (item) => (item.desc||'').slice(0,28);
-  drawFirstHeader(); drawFooter(1);
-  drawSection('Skipped',skipped,(item,ry,rh)=>{ dTextR(item.item||'',COL1,ry,rh,9,C_TEXT,true); dTextR(desc(item),COL2,ry,rh,8.5,C_MUTED,false); dTextR('',COL3,ry,rh,9,C_TEXT,false); dTextR('',COL4,ry,rh,9,C_TEXT,false); dTextR((item.reason||'Skipped').slice(0,38),COL5,ry,rh,8.5,C_AMBER,false); },C_AMBER_BAR,C_AMBER_BG);
-  drawSection('Not Found',notFound,(item,ry,rh)=>{ dTextR(item.item||'',COL1,ry,rh,9,C_TEXT,true); dTextR(desc(item),COL2,ry,rh,8.5,C_MUTED,false); dTextR(item.order!=null?String(item.order):'',COL3,ry,rh,9,C_TEXT,false); dTextR(item.qoh!=null?String(item.qoh):'',COL4,ry,rh,9,C_TEXT,false); dTextR((item.reason||'Not found').slice(0,38),COL5,ry,rh,8.5,C_RED,false); },C_RED_BAR,C_RED_BG);
-  drawSection('Flagged - Enter Manually',flagged,(item,ry,rh)=>{ dTextR(item.item||'',COL1,ry,rh,9,C_TEXT,true); dTextR(desc(item),COL2,ry,rh,8.5,C_MUTED,false); dTextR(item.qty!=null?String(item.qty):'',COL3,ry,rh,9,C_TEXT,false); dTextR('',COL4,ry,rh,9,C_TEXT,false); dTextR((item.reason||'').slice(0,38),COL5,ry,rh,8.5,C_BLUE,false); },C_BLUE_BAR,C_BLUE_BG);
-  if (!notFound.length&&!flagged.length&&!skipped.length) { checkBreak(50); cy[0]+=20; dRect(ML,cy[0],contentW,38,C_GREEN_BG); dTextR(`All ${entered.length} items entered successfully - no issues.`,ML+14,cy[0],38,12,C_GREEN,true); cy[0]+=38; }
-  newPage();
-  const totalPages = pages.length;
-  let pdfStr = '%PDF-1.4\n';
-  const objOff = {};
-  const addO = (n,body) => { objOff[n]=pdfStr.length; pdfStr+=`${n} 0 obj\n${body}\nendobj\n`; };
-  addO(4,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
-  addO(5,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
-  const base=6;
-  for(let pi=0;pi<totalPages;pi++) { const stream=pages[pi].join('\n'); addO(base+pi,`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`); }
-  const pagesId=base+totalPages; const pageIds=[];
-  for(let pi=0;pi<totalPages;pi++) { const oid=pagesId+1+pi; pageIds.push(oid); addO(oid,`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${PW} ${PH}] /Contents ${base+pi} 0 R /Resources << /Font << /Helvetica 4 0 R /Helvetica-Bold 5 0 R >> >> >>`); }
-  const catalogId=pagesId+1+totalPages;
-  addO(pagesId,`<< /Type /Pages /Kids [${pageIds.map(o=>`${o} 0 R`).join(' ')}] /Count ${totalPages} >>`);
-  addO(catalogId,`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
-  const xrefOff=pdfStr.length;
-  pdfStr+=`xref\n0 ${catalogId+1}\n0000000000 65535 f \n`;
-  for(let i=1;i<=catalogId;i++) pdfStr+=String(objOff[i]||0).padStart(10,'0')+' 00000 n \n';
-  pdfStr+=`trailer\n<< /Size ${catalogId+1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOff}\n%%EOF`;
-  const bytes=unescape(encodeURIComponent(pdfStr));
-  let b64=''; const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  for(let i=0;i<bytes.length;i+=3){const b=[bytes.charCodeAt(i),bytes.charCodeAt(i+1)||0,bytes.charCodeAt(i+2)||0];const chunk=(b[0]<<16)|(b[1]<<8)|b[2];b64+=chars[(chunk>>18)&63]+chars[(chunk>>12)&63]+(i+1<bytes.length?chars[(chunk>>6)&63]:'=')+(i+2<bytes.length?chars[chunk&63]:'=');}
-  return b64;
+
+  const tableRows = (items) => items.map(item => `
+    <tr style="border-bottom:0.5px solid #f0f0f0;page-break-inside:avoid">
+      <td style="padding:9px 0;font-family:'Courier New',monospace;font-size:11px;font-weight:500;color:#111;width:110px;white-space:nowrap;overflow:hidden">${escHtml(item.item||'')}</td>
+      <td style="padding:9px 16px 9px 0;font-size:12px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml((item.desc||'').slice(0,40)) || '<span style="color:#aaa">—</span>'}</td>
+      <td style="padding:9px 0;font-size:11.5px;font-weight:600;color:${reasonColor(item)};width:160px;text-align:right;white-space:nowrap">${reasonText(item)}</td>
+    </tr>`).join('');
+
+  const section = (title, items, borderColor) => {
+    if (!items.length) return '';
+    return `
+    <div style="margin-top:28px;page-break-inside:avoid">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:2px solid ${borderColor};page-break-after:avoid">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${borderColor}">${escHtml(title)}</span>
+        <span style="font-size:11px;font-weight:600;font-family:'Courier New',monospace;color:${borderColor}">${items.length} item${items.length!==1?'s':''}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+        <thead>
+          <tr style="border-bottom:0.5px solid #ddd">
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#888;padding:8px 0;text-align:left;width:110px">Item #</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#888;padding:8px 0;text-align:left">Description</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#888;padding:8px 0;text-align:right;width:160px">Reason</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows(items)}</tbody>
+      </table>
+    </div>`;
+  };
+
+  const allClearBlock = (!skipped.length && !notFound.length && !flagged.length)
+    ? `<div style="margin-top:28px;background:#f0fdf4;border-radius:8px;padding:16px 20px;color:#15803d;font-size:13px;font-weight:600">All ${entered.length} items entered successfully. No issues.</div>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', Arial, sans-serif; color: #111; background: #fff; }
+  @media print { tr { page-break-inside: avoid; } }
+</style>
+</head>
+<body style="padding:0;margin:0">
+  <div style="background:#0a0a0a;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+    <div>
+      <div style="display:flex;align-items:baseline;gap:0;margin-bottom:4px">
+        <span style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.5px;line-height:1.1">${escHtml(store)}</span>${storeNumHtml}
+      </div>
+      <div style="font-size:13px;color:#888;font-weight:400;line-height:1.6">${escHtml(date)}</div>
+      <div style="font-size:13px;color:#888;font-weight:400;line-height:1.6">${escHtml(runtimeStr)} runtime</div>
+      ${totalStr ? `<div style="font-size:13px;color:#4ade80;font-weight:600;line-height:1.6;margin-top:2px">${escHtml(totalStr)}</div>` : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex-shrink:0">
+      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
+        <div style="font-size:20px;font-weight:700;color:#4ade80;line-height:1;margin-bottom:4px">${entered.length}</div>
+        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#4ade80;opacity:0.7">Entered</div>
+      </div>
+      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
+        <div style="font-size:20px;font-weight:700;color:#fbbf24;line-height:1;margin-bottom:4px">${skipped.length}</div>
+        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#fbbf24;opacity:0.7">Skipped</div>
+      </div>
+      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
+        <div style="font-size:20px;font-weight:700;color:#f87171;line-height:1;margin-bottom:4px">${notFound.length}</div>
+        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#f87171;opacity:0.7">Not Found</div>
+      </div>
+      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
+        <div style="font-size:20px;font-weight:700;color:#60a5fa;line-height:1;margin-bottom:4px">${flagged.length}</div>
+        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#60a5fa;opacity:0.7">Flagged</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 32px 32px;background:#fff">
+    ${section('Skipped', skipped, '#d97706')}
+    ${section('Not Found', notFound, '#dc2626')}
+    ${section('Flagged - Enter Manually', flagged, '#2563eb')}
+    ${allClearBlock}
+  </div>
+</body>
+</html>`;
 }
 
 async function sendCompletionEmail() {
   const r=localState?.results||{}, od=localState?.orderData||{};
-  const store=od.store||'Unknown Store', operator=od.operator||'Unknown', date=new Date().toLocaleDateString('en-CA');
+  const store=od.store||'Unknown Store', date=new Date().toLocaleDateString('en-CA');
   setEmailStatus('sending');
   const timerStart=localState?.timerStart; let runtimeStr='N/A';
   if(timerStart){const s=Math.floor((Date.now()-timerStart)/1000);runtimeStr=`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`;}
   const entered=r.entered||[], skipped=r.skipped||[], notFound=r.notFound||[], flagged=r.flagged||[];
-  const pdfBase64=buildReportPDF({store,operator,date,runtimeStr,entered,skipped,notFound,flagged});
-  const payload={action:'sendEmail',store,operator,date,runtime:runtimeStr,entered:entered.length,skipped:skipped.length,notFound:notFound.length,flagged:flagged.length,total:entered.length+skipped.length+notFound.length+flagged.length,pdfBase64,filename:`petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`};
+  const orderTotal = entered.reduce((sum, i) => sum + (i.extPrice||0), 0);
+  const fmtCAD = n => n > 0 ? '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' CAD' : 'N/A';
+  const reportHtml = buildReportHTML({store, date, runtimeStr, entered, skipped, notFound, flagged, orderTotal});
+  const payload={
+    action:'sendEmail', store, date, runtime:runtimeStr,
+    entered:entered.length, skipped:skipped.length, notFound:notFound.length, flagged:flagged.length,
+    total:entered.length+skipped.length+notFound.length+flagged.length,
+    orderTotal: fmtCAD(orderTotal),
+    reportHtml,
+    filename:`petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`
+  };
   try{await chrome.runtime.sendMessage({type:'APPS_POST',payload});setEmailStatus('sent');}
   catch(e){console.warn('[PV] Email send failed:',e.message);setEmailStatus('failed');}
 }
@@ -545,14 +576,14 @@ function setEmailStatus(state) {
 
 function downloadNotFound() {
   const r=localState?.results; if(!r) return;
-  const od=localState?.orderData||{}, store=od.store||'order', operator=od.operator||'', date=new Date().toLocaleDateString('en-CA');
+  const od=localState?.orderData||{}, store=od.store||'order', date=new Date().toLocaleDateString('en-CA');
   const timerStart=localState?.timerStart; let runtimeStr='N/A';
   if(timerStart){const s=Math.floor((Date.now()-timerStart)/1000);runtimeStr=`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`;}
-  const pdfBase64=buildReportPDF({store,operator,date,runtimeStr,entered:r.entered||[],skipped:r.skipped||[],notFound:r.notFound||[],flagged:r.flagged||[]});
-  const bytes=atob(pdfBase64), buf=new Uint8Array(bytes.length);
-  for(let i=0;i<bytes.length;i++) buf[i]=bytes.charCodeAt(i);
-  const blob=new Blob([buf],{type:'application/pdf'}), a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=`petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`; a.click();
+  const entered=r.entered||[], skipped=r.skipped||[], notFound=r.notFound||[], flagged=r.flagged||[];
+  const orderTotal=entered.reduce((sum,i)=>sum+(i.extPrice||0),0);
+  const html=buildReportHTML({store,date,runtimeStr,entered,skipped,notFound,flagged,orderTotal});
+  const blob=new Blob([html],{type:'text/html'}), a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=`petvalu_report_${store.replace(/ /g,'_')}_${date}.html`; a.click();
 }
 
 async function resetToStart() {
@@ -578,7 +609,6 @@ async function botScript(orderData, timings, runId) {
   async function clearFilter(label,forceReal){const input=getFilterInput(label);if(!input)return;if(timings.overwriteMode&&!forceReal){input.focus();input.select();}else{input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));if(timings.afterClear>0)await sleep(timings.afterClear);}}
   function getVisibleRows(){return Array.from(document.querySelectorAll('.ag-row[role="row"]')).filter(r=>!r.classList.contains('ag-row-loading')&&!r.classList.contains('ag-row-stub'));}
   function findExactRow(rows,id){return rows.find(r=>{const c=r.querySelector('[col-id="item_no"]');return c&&c.textContent.trim().toLowerCase()===String(id).trim().toLowerCase();})||null;}
-  // ── Substituted item path: verify row actually contains our ID in the sub cell ──
   function findSubRow(rows,id){
     const idL=String(id).trim().toLowerCase();
     return rows.find(r=>{
@@ -593,6 +623,13 @@ async function botScript(orderData, timings, runId) {
   function getAgApi(){try{const agGridEl=document.querySelector('ag-grid-angular');if(!agGridEl)return null;const inst=agGridEl['__ag_grid_instance'];if(inst?.api?.forEachNodeAfterFilter)return inst.api;if(inst?.forEachNodeAfterFilter)return inst;if(inst?.gridOptions?.api?.forEachNodeAfterFilter)return inst.gridOptions.api;}catch(e){console.log('[PV Bot] getAgApi error:',e);}return null;}
   function getRowDataFromGrid(itemId){try{const api=getAgApi();if(!api)return null;let found=null;api.forEachNodeAfterFilter(node=>{if(found)return;const d=node.data;if(d&&String(d.item_no||'').trim().toLowerCase()===String(itemId).trim().toLowerCase())found=d;});return found;}catch(e){return null;}}
   function getItemDescription(row,gridData){const candidates=['item_name','item_description','description','product_description','desc','item_desc'];for(const col of candidates){const v=(gridData&&gridData[col])||getCellText(row,col);if(v&&v.trim())return v.trim();}return '';}
+  // ── Parse extended net wholesale price from col-id="value" ──
+  function parseExtPrice(row){
+    const raw=getCellText(row,'value');
+    if(!raw) return 0;
+    const n=parseFloat(raw.replace(/[$,]/g,''));
+    return isNaN(n)?0:n;
+  }
   function calcQty(appOrder,appQoh,avgSales,multiple,isCases){let order=appOrder;if(isCases&&order>0)order=order*multiple;let qty;if(order===0){if(avgSales===0)return{qty:null,reason:'Skipped \u2014 avg sales is 0'};qty=Math.ceil(avgSales*4-appQoh);if(qty<=0)return{qty:null,reason:`Skipped \u2014 already have enough on hand (avg=${avgSales}, qoh=${appQoh})`};}else{qty=order;if(qty<=0)return{qty:null,reason:'Skipped \u2014 order qty \u2264 0'};}if(multiple>1){const rem=qty%multiple;if(rem!==0)qty+=(multiple-rem);}return{qty};}
   async function enterQty(row,qty){const cell=row.querySelector('[col-id="unit_qty_chg"]');if(!cell)return false;cell.click();await sleep(250);cell.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true,view:window}));await sleep(400);let input=cell.querySelector('input[aria-label="Input Editor"]')||cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');if(!input){cell.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',keyCode:113,bubbles:true}));await sleep(350);input=cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');}if(!input)return false;input.focus();input.select();input.value=String(qty);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));input.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',keyCode:9,bubbles:true}));await sleep(timings.afterQty);return true;}
 
@@ -609,7 +646,7 @@ async function botScript(orderData, timings, runId) {
       await setFilter('Substituted Item Filter Input',id);
       await sleep(timings.afterSubFilter??timings.afterFilter);
       rows=getVisibleRows();
-      targetRow=findSubRow(rows,id); // verified match — not blind rows[0]
+      targetRow=findSubRow(rows,id);
       usedSub=true;
     }
     if(!targetRow){results.notFound.push({item:id,order:item.order,qoh:item.qoh,desc:'',reason:'Not found (checked Item No + Substituted Item)'});sendProgress(`${id} \u2014 NOT FOUND`,i+1,items.length,'notfound',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
@@ -624,8 +661,15 @@ async function botScript(orderData, timings, runId) {
     const calcResult=calcQty(absOrder,item.qoh,avgSales,multiple,isCases);
     if(calcResult.qty===null){results.skipped.push({item:id,desc:itemDesc,reason:calcResult.reason});sendProgress(`${id} \u2014 ${calcResult.reason}`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const qty=calcResult.qty, ok=await enterQty(targetRow,qty);
-    if(ok){results.entered.push({item:id,qty,usedSub,desc:itemDesc});sendProgress(`${id} \u2014 entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);}
-    else{results.flagged.push({item:id,qty,desc:itemDesc,reason:'Could not click/edit Qty cell'});sendProgress(`${id} \u2014 FLAGGED (enter ${qty} manually)`,i+1,items.length,'flag',results);}
+    if(ok){
+      // Read extended net wholesale price after qty committed
+      const extPrice=parseExtPrice(targetRow);
+      results.entered.push({item:id,qty,usedSub,desc:itemDesc,extPrice});
+      sendProgress(`${id} \u2014 entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);
+    } else {
+      results.flagged.push({item:id,qty,desc:itemDesc,reason:'Could not click/edit Qty cell'});
+      sendProgress(`${id} \u2014 FLAGGED (enter ${qty} manually)`,i+1,items.length,'flag',results);
+    }
     await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true); await sleep(timings.betweenItems);
   }
   chrome.runtime.sendMessage({type:'PV_COMPLETE',results,runId,wasStopped:results._stopped||false});
@@ -640,9 +684,9 @@ async function devTestEmail() {
   statusEl.style.color='var(--muted)';statusEl.textContent='Injecting state and calling sendCompletionEmail()...';
   const fakeTimerStart=Date.now()-(4*60*1000+17*1000);
   await setState({phase:'complete',timerStart:fakeTimerStart,orderData:{store:'Lakeshore Rd',operator:'Nipun'},results:{
-    entered:[{item:'10045231',qty:6,usedSub:false,desc:'Purina Dog Chow'},{item:'10078432',qty:12,usedSub:false,desc:'Royal Canin Indoor'}],
+    entered:[{item:'10045231',qty:6,usedSub:false,desc:'Purina Dog Chow',extPrice:42.50},{item:'10078432',qty:12,usedSub:false,desc:'Royal Canin Indoor',extPrice:138.00}],
     skipped:[{item:'10011111',desc:'Whiskas Tuna Treats',reason:'OOS \u2014 Out of Stock'},{item:'10022222',desc:'Pedigree Dental Stix',reason:'ROS \u2014 Ranged Out of Store'}],
-    notFound:[{item:'10099999',order:4,qoh:1,desc:'',reason:'Not found in portal'}],
+    notFound:[{item:'10099999',order:4,qoh:1,desc:'',reason:'Not found (checked Item No + Substituted Item)'}],
     flagged:[{item:'10088888',qty:5,desc:"Hill's Science Diet",reason:'Could not click/edit Qty cell'}]
   }});
   localState=await getState();
