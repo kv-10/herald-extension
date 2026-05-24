@@ -434,12 +434,13 @@ function showEmailPrompt() {
 }
 
 // ── HTML REPORT BUILDER ──
+// Pet Valu brand colours: navy #1e3a4f, light blue #6bb8e0
+// -webkit-print-color-adjust: exact forces Drive's PDF renderer to honour all backgrounds
 function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, flagged, orderTotal }) {
   const storeNum = { 'Lakeshore Rd':'2087', 'Lambton Mall':'2356', 'Corunna':'2372', 'London':'2412' }[store] || '';
-  const storeNumHtml = storeNum ? `<span style="font-family:'Courier New',monospace;font-size:13px;font-weight:500;color:#555;margin-left:10px">#${storeNum}</span>` : '';
+  const storeNumHtml = storeNum ? `<span style="font-family:'Courier New',monospace;font-size:13px;font-weight:500;color:#6bb8e0;margin-left:10px">#${storeNum}</span>` : '';
   const fmtCAD = n => n > 0 ? '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' CAD' : '';
   const totalStr = fmtCAD(orderTotal || 0);
-
   const escHtml = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   const reasonText = (item) => {
@@ -491,8 +492,15 @@ function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, 
   };
 
   const allClearBlock = (!skipped.length && !notFound.length && !flagged.length)
-    ? `<div style="margin-top:28px;background:#f0fdf4;border-radius:8px;padding:16px 20px;color:#15803d;font-size:13px;font-weight:600">All ${entered.length} items entered successfully. No issues.</div>`
+    ? `<div style="margin-top:28px;background:#f0fdf4;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:8px;padding:16px 20px;color:#15803d;font-size:13px;font-weight:600">All ${entered.length} items entered successfully. No issues.</div>`
     : '';
+
+  // Stat cards: light tinted backgrounds that render reliably, coloured numbers
+  const statCard = (val, label, numColor, bgColor, borderColor) =>
+    `<div style="background:${bgColor};-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:8px;padding:10px 14px;border:1.5px solid ${borderColor};text-align:center;min-width:64px">
+      <div style="font-size:20px;font-weight:700;color:${numColor};line-height:1;margin-bottom:4px">${val}</div>
+      <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${numColor}">${label}</div>
+    </div>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -501,37 +509,25 @@ function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', Arial, sans-serif; color: #111; background: #fff; }
+  body { font-family: 'Inter', Arial, sans-serif; color: #111; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   @media print { tr { page-break-inside: avoid; } }
 </style>
 </head>
 <body style="padding:0;margin:0">
-  <div style="background:#0a0a0a;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+  <div style="background:#1e3a4f;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
     <div>
       <div style="display:flex;align-items:baseline;gap:0;margin-bottom:4px">
-        <span style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.5px;line-height:1.1">${escHtml(store)}</span>${storeNumHtml}
+        <span style="font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;line-height:1.1">${escHtml(store)}</span>${storeNumHtml}
       </div>
-      <div style="font-size:13px;color:#888;font-weight:400;line-height:1.6">${escHtml(date)}</div>
-      <div style="font-size:13px;color:#888;font-weight:400;line-height:1.6">${escHtml(runtimeStr)} runtime</div>
-      ${totalStr ? `<div style="font-size:13px;color:#4ade80;font-weight:600;line-height:1.6;margin-top:2px">${escHtml(totalStr)}</div>` : ''}
+      <div style="font-size:13px;color:#a8c8dc;font-weight:400;line-height:1.6">${escHtml(date)}</div>
+      <div style="font-size:13px;color:#a8c8dc;font-weight:400;line-height:1.6">${escHtml(runtimeStr)} runtime</div>
+      ${totalStr ? `<div style="font-size:13px;color:#6bb8e0;font-weight:600;line-height:1.6;margin-top:2px">${escHtml(totalStr)}</div>` : ''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex-shrink:0">
-      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
-        <div style="font-size:20px;font-weight:700;color:#4ade80;line-height:1;margin-bottom:4px">${entered.length}</div>
-        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#4ade80;opacity:0.7">Entered</div>
-      </div>
-      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
-        <div style="font-size:20px;font-weight:700;color:#fbbf24;line-height:1;margin-bottom:4px">${skipped.length}</div>
-        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#fbbf24;opacity:0.7">Skipped</div>
-      </div>
-      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
-        <div style="font-size:20px;font-weight:700;color:#f87171;line-height:1;margin-bottom:4px">${notFound.length}</div>
-        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#f87171;opacity:0.7">Not Found</div>
-      </div>
-      <div style="background:#181818;border-radius:8px;padding:10px 14px;border:0.5px solid #2a2a2a;text-align:center;min-width:64px">
-        <div style="font-size:20px;font-weight:700;color:#60a5fa;line-height:1;margin-bottom:4px">${flagged.length}</div>
-        <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#60a5fa;opacity:0.7">Flagged</div>
-      </div>
+      ${statCard(entered.length,  'Entered',   '#16a34a', '#f0fdf4', '#86efac')}
+      ${statCard(skipped.length,  'Skipped',   '#d97706', '#fffbeb', '#fcd34d')}
+      ${statCard(notFound.length, 'Not Found', '#dc2626', '#fef2f2', '#fca5a5')}
+      ${statCard(flagged.length,  'Flagged',   '#2563eb', '#eff6ff', '#93c5fd')}
     </div>
   </div>
   <div style="padding:0 32px 32px;background:#fff">
@@ -623,13 +619,7 @@ async function botScript(orderData, timings, runId) {
   function getAgApi(){try{const agGridEl=document.querySelector('ag-grid-angular');if(!agGridEl)return null;const inst=agGridEl['__ag_grid_instance'];if(inst?.api?.forEachNodeAfterFilter)return inst.api;if(inst?.forEachNodeAfterFilter)return inst;if(inst?.gridOptions?.api?.forEachNodeAfterFilter)return inst.gridOptions.api;}catch(e){console.log('[PV Bot] getAgApi error:',e);}return null;}
   function getRowDataFromGrid(itemId){try{const api=getAgApi();if(!api)return null;let found=null;api.forEachNodeAfterFilter(node=>{if(found)return;const d=node.data;if(d&&String(d.item_no||'').trim().toLowerCase()===String(itemId).trim().toLowerCase())found=d;});return found;}catch(e){return null;}}
   function getItemDescription(row,gridData){const candidates=['item_name','item_description','description','product_description','desc','item_desc'];for(const col of candidates){const v=(gridData&&gridData[col])||getCellText(row,col);if(v&&v.trim())return v.trim();}return '';}
-  // ── Parse extended net wholesale price from col-id="value" ──
-  function parseExtPrice(row){
-    const raw=getCellText(row,'value');
-    if(!raw) return 0;
-    const n=parseFloat(raw.replace(/[$,]/g,''));
-    return isNaN(n)?0:n;
-  }
+  function parseExtPrice(row){const raw=getCellText(row,'value');if(!raw)return 0;const n=parseFloat(raw.replace(/[$,]/g,''));return isNaN(n)?0:n;}
   function calcQty(appOrder,appQoh,avgSales,multiple,isCases){let order=appOrder;if(isCases&&order>0)order=order*multiple;let qty;if(order===0){if(avgSales===0)return{qty:null,reason:'Skipped \u2014 avg sales is 0'};qty=Math.ceil(avgSales*4-appQoh);if(qty<=0)return{qty:null,reason:`Skipped \u2014 already have enough on hand (avg=${avgSales}, qoh=${appQoh})`};}else{qty=order;if(qty<=0)return{qty:null,reason:'Skipped \u2014 order qty \u2264 0'};}if(multiple>1){const rem=qty%multiple;if(rem!==0)qty+=(multiple-rem);}return{qty};}
   async function enterQty(row,qty){const cell=row.querySelector('[col-id="unit_qty_chg"]');if(!cell)return false;cell.click();await sleep(250);cell.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true,view:window}));await sleep(400);let input=cell.querySelector('input[aria-label="Input Editor"]')||cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');if(!input){cell.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',keyCode:113,bubbles:true}));await sleep(350);input=cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');}if(!input)return false;input.focus();input.select();input.value=String(qty);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));input.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',keyCode:9,bubbles:true}));await sleep(timings.afterQty);return true;}
 
@@ -662,7 +652,6 @@ async function botScript(orderData, timings, runId) {
     if(calcResult.qty===null){results.skipped.push({item:id,desc:itemDesc,reason:calcResult.reason});sendProgress(`${id} \u2014 ${calcResult.reason}`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const qty=calcResult.qty, ok=await enterQty(targetRow,qty);
     if(ok){
-      // Read extended net wholesale price after qty committed
       const extPrice=parseExtPrice(targetRow);
       results.entered.push({item:id,qty,usedSub,desc:itemDesc,extPrice});
       sendProgress(`${id} \u2014 entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);
