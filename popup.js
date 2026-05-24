@@ -491,6 +491,7 @@ function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  @page { margin: 0; }
   body { font-family:'DM Sans',Arial,sans-serif; color:#111; background:#fff; margin:0; padding:0; }
   @media print { tr { page-break-inside:avoid; } }
 </style>
@@ -518,7 +519,7 @@ function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, 
 <div style="padding:0 28px 28px;background:#fff">
   ${section('Skipped', skipped, '#b45309')}
   ${section('Not Found', notFound, '#b91c1c')}
-  ${section('Flagged — Enter Manually', flagged, '#1d4ed8')}
+  ${section('Flagged \u2014 Enter Manually', flagged, '#1d4ed8')}
   ${allClearBlock}
 </div>
 </body>
@@ -555,7 +556,7 @@ function setEmailStatus(state) {
   else if(state==='failed'){el.className='email-badge email-failed';el.innerHTML='\u2717 Receipt failed to send';el.style.animation='badgePop 0.4s cubic-bezier(0.22,1,0.36,1) forwards';}
 }
 
-function downloadNotFound() {
+async function downloadNotFound() {
   const r=localState?.results; if(!r) return;
   const od=localState?.orderData||{}, store=od.store||'order', date=new Date().toLocaleDateString('en-CA');
   const timerStart=localState?.timerStart; let runtimeStr='N/A';
@@ -563,8 +564,19 @@ function downloadNotFound() {
   const entered=r.entered||[], skipped=r.skipped||[], notFound=r.notFound||[], flagged=r.flagged||[];
   const orderTotal=entered.reduce((sum,i)=>sum+(i.extPrice||0),0);
   const html=buildReportHTML({store,date,runtimeStr,entered,skipped,notFound,flagged,orderTotal});
-  const blob=new Blob([html],{type:'text/html'}), a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=`petvalu_report_${store.replace(/ /g,'_')}_${date}.html`; a.click();
+  const filename=`petvalu_report_${store.replace(/ /g,'_')}_${date}.pdf`;
+  try {
+    const resp = await chrome.runtime.sendMessage({ type:'APPS_POST', payload:{ action:'downloadPdf', reportHtml:html, filename } });
+    if (!resp?.ok) throw new Error('no response');
+    const b64 = resp.data?.pdfBase64; if (!b64) throw new Error('no pdf');
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], {type:'application/pdf'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+  } catch(e) {
+    console.warn('[PV] PDF download failed, falling back to HTML:', e.message);
+    const blob=new Blob([html],{type:'text/html'}), a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=filename.replace('.pdf','.html'); a.click();
+  }
 }
 
 async function resetToStart() {
