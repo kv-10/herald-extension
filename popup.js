@@ -434,11 +434,8 @@ function showEmailPrompt() {
 }
 
 // ── HTML REPORT BUILDER ──
-// Pet Valu brand colours: navy #1e3a4f, light blue #6bb8e0
-// -webkit-print-color-adjust: exact forces Drive's PDF renderer to honour all backgrounds
 function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, flagged, orderTotal }) {
   const storeNum = { 'Lakeshore Rd':'2087', 'Lambton Mall':'2356', 'Corunna':'2372', 'London':'2412' }[store] || '';
-  const storeNumHtml = storeNum ? `<span style="font-family:'Courier New',monospace;font-size:13px;font-weight:500;color:#6bb8e0;margin-left:10px">#${storeNum}</span>` : '';
   const fmtCAD = n => n > 0 ? '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' CAD' : '';
   const totalStr = fmtCAD(orderTotal || 0);
   const escHtml = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -455,87 +452,75 @@ function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, 
     return escHtml(r.slice(0, 40));
   };
 
-  const reasonColor = (item) => {
-    const r = item.reason || '';
-    if (r.includes('OOS') || r.includes('Not found')) return '#b91c1c';
-    if (r.includes('ROS')) return '#b45309';
-    if (r.includes('INOT')) return '#1d4ed8';
-    return '#444';
-  };
-
   const tableRows = (items) => items.map(item => `
-    <tr style="border-bottom:0.5px solid #f0f0f0;page-break-inside:avoid">
-      <td style="padding:9px 0;font-family:'Courier New',monospace;font-size:11px;font-weight:500;color:#111;width:110px;white-space:nowrap;overflow:hidden">${escHtml(item.item||'')}</td>
-      <td style="padding:9px 16px 9px 0;font-size:12px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml((item.desc||'').slice(0,40)) || '<span style="color:#aaa">—</span>'}</td>
-      <td style="padding:9px 0;font-size:11.5px;font-weight:600;color:${reasonColor(item)};width:160px;text-align:right;white-space:nowrap">${reasonText(item)}</td>
+    <tr style="border-bottom:0.5px solid #f7f7f7;page-break-inside:avoid">
+      <td style="padding:7px 0;font-family:'Courier New',monospace;font-size:9.5px;font-weight:500;color:#555;width:92px;white-space:nowrap;overflow:hidden;padding-right:14px">${escHtml(item.item||'')}</td>
+      <td style="padding:7px 20px 7px 0;font-size:10.5px;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400">${escHtml((item.desc||'').slice(0,40)) || '<span style="color:#ddd">&#8212;</span>'}</td>
+      <td style="padding:7px 0;font-size:10px;font-weight:400;color:#333;width:130px;text-align:right;white-space:nowrap">${reasonText(item)}</td>
     </tr>`).join('');
 
-  const section = (title, items, borderColor) => {
+  const section = (title, items, color) => {
     if (!items.length) return '';
     return `
-    <div style="margin-top:28px;page-break-inside:avoid">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:2px solid ${borderColor};page-break-after:avoid">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${borderColor}">${escHtml(title)}</span>
-        <span style="font-size:11px;font-weight:600;font-family:'Courier New',monospace;color:${borderColor}">${items.length} item${items.length!==1?'s':''}</span>
+    <div style="margin-top:20px;page-break-inside:avoid">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding-bottom:5px;border-bottom:1px solid ${color};page-break-after:avoid">
+        <span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2.5px;color:${color}">${escHtml(title)}</span>
+        <span style="font-family:'Courier New',monospace;font-size:8.5px;font-weight:400;color:${color}">${items.length} item${items.length!==1?'s':''}</span>
       </div>
       <table style="width:100%;border-collapse:collapse;table-layout:fixed">
-        <thead>
-          <tr style="border-bottom:0.5px solid #ddd">
-            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#888;padding:8px 0;text-align:left;width:110px">Item #</th>
-            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#888;padding:8px 0;text-align:left">Description</th>
-            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#888;padding:8px 0;text-align:right;width:160px">Reason</th>
-          </tr>
-        </thead>
+        <thead><tr style="border-bottom:0.5px solid #f0f0f0">
+          <th style="font-family:'Courier New',monospace;font-size:7px;font-weight:400;text-transform:uppercase;letter-spacing:1px;color:#ccc;padding:6px 0;text-align:left;width:92px">Item #</th>
+          <th style="font-family:'Courier New',monospace;font-size:7px;font-weight:400;text-transform:uppercase;letter-spacing:1px;color:#ccc;padding:6px 0;text-align:left">Description</th>
+          <th style="font-family:'Courier New',monospace;font-size:7px;font-weight:400;text-transform:uppercase;letter-spacing:1px;color:#ccc;padding:6px 0;text-align:right;width:130px">Reason</th>
+        </tr></thead>
         <tbody>${tableRows(items)}</tbody>
       </table>
     </div>`;
   };
 
   const allClearBlock = (!skipped.length && !notFound.length && !flagged.length)
-    ? `<div style="margin-top:28px;background:#f0fdf4;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:8px;padding:16px 20px;color:#15803d;font-size:13px;font-weight:600">All ${entered.length} items entered successfully. No issues.</div>`
+    ? `<div style="margin-top:20px;background:#f0fdf4;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:5px;padding:12px 16px;color:#15803d;font-size:11px;font-weight:500">All ${entered.length} items entered successfully. No issues.</div>`
     : '';
 
-  // Stat cards: light tinted backgrounds that render reliably, coloured numbers
-  const statCard = (val, label, numColor, bgColor, borderColor) =>
-    `<div style="background:${bgColor};-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:8px;padding:10px 14px;border:1.5px solid ${borderColor};text-align:center;min-width:64px">
-      <div style="font-size:20px;font-weight:700;color:${numColor};line-height:1;margin-bottom:4px">${val}</div>
-      <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${numColor}">${label}</div>
-    </div>`;
+  const storeNumHtml = storeNum ? `<span style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:#666;margin-left:8px">#${storeNum}</span>` : '';
 
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', Arial, sans-serif; color: #111; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  @media print { tr { page-break-inside: avoid; } }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  body { font-family:'DM Sans',Arial,sans-serif; color:#111; background:#fff; margin:0; padding:0; }
+  @media print { tr { page-break-inside:avoid; } }
 </style>
 </head>
-<body style="padding:0;margin:0">
-  <div style="background:#1e3a4f;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
-    <div>
-      <div style="display:flex;align-items:baseline;gap:0;margin-bottom:4px">
-        <span style="font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;line-height:1.1">${escHtml(store)}</span>${storeNumHtml}
-      </div>
-      <div style="font-size:13px;color:#a8c8dc;font-weight:400;line-height:1.6">${escHtml(date)}</div>
-      <div style="font-size:13px;color:#a8c8dc;font-weight:400;line-height:1.6">${escHtml(runtimeStr)} runtime</div>
-      ${totalStr ? `<div style="font-size:13px;color:#6bb8e0;font-weight:600;line-height:1.6;margin-top:2px">${escHtml(totalStr)}</div>` : ''}
+<body>
+<div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#0f0f0f;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+  <div style="flex:1">
+    <div style="font-size:19px;font-weight:700;color:#fff;letter-spacing:-0.5px;line-height:1;display:flex;align-items:baseline;gap:8px;margin-bottom:5px">
+      <span>${escHtml(store)}</span>${storeNumHtml}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex-shrink:0">
-      ${statCard(entered.length,  'Entered',   '#16a34a', '#f0fdf4', '#86efac')}
-      ${statCard(skipped.length,  'Skipped',   '#d97706', '#fffbeb', '#fcd34d')}
-      ${statCard(notFound.length, 'Not Found', '#dc2626', '#fef2f2', '#fca5a5')}
-      ${statCard(flagged.length,  'Flagged',   '#2563eb', '#eff6ff', '#93c5fd')}
+    <div style="font-size:10.5px;color:#aaa;font-weight:400;display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span>${escHtml(date)}</span>
+      <span style="width:2px;height:2px;border-radius:50%;background:#555;display:inline-block;flex-shrink:0"></span>
+      <span>${escHtml(runtimeStr)} runtime</span>
     </div>
+    ${totalStr ? `<div style="font-size:11.5px;font-weight:600;color:#e5e5e5;letter-spacing:-0.1px">${escHtml(totalStr)}</div>` : ''}
   </div>
-  <div style="padding:0 32px 32px;background:#fff">
-    ${section('Skipped', skipped, '#d97706')}
-    ${section('Not Found', notFound, '#dc2626')}
-    ${section('Flagged - Enter Manually', flagged, '#2563eb')}
-    ${allClearBlock}
+  <div style="display:flex;gap:4px;flex-shrink:0;align-items:center">
+    <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:54px;padding:6px 0;text-align:center;background:transparent;border-radius:5px;border:1px solid #2a2a2a;flex-shrink:0"><div style="font-size:17px;font-weight:700;color:#4ade80;line-height:1;margin-bottom:3px;letter-spacing:-0.8px">${entered.length}</div><div style="font-family:'Courier New',monospace;font-size:6px;font-weight:400;text-transform:uppercase;letter-spacing:0.5px;color:#aaa">Entered</div></div>
+    <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:54px;padding:6px 0;text-align:center;background:transparent;border-radius:5px;border:1px solid #2a2a2a;flex-shrink:0"><div style="font-size:17px;font-weight:700;color:#fbbf24;line-height:1;margin-bottom:3px;letter-spacing:-0.8px">${skipped.length}</div><div style="font-family:'Courier New',monospace;font-size:6px;font-weight:400;text-transform:uppercase;letter-spacing:0.5px;color:#aaa">Skipped</div></div>
+    <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:54px;padding:6px 0;text-align:center;background:transparent;border-radius:5px;border:1px solid #2a2a2a;flex-shrink:0"><div style="font-size:17px;font-weight:700;color:#f87171;line-height:1;margin-bottom:3px;letter-spacing:-0.8px">${notFound.length}</div><div style="font-family:'Courier New',monospace;font-size:6px;font-weight:400;text-transform:uppercase;letter-spacing:0.5px;color:#aaa">Not Found</div></div>
+    <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:54px;padding:6px 0;text-align:center;background:transparent;border-radius:5px;border:1px solid #2a2a2a;flex-shrink:0"><div style="font-size:17px;font-weight:700;color:#60a5fa;line-height:1;margin-bottom:3px;letter-spacing:-0.8px">${flagged.length}</div><div style="font-family:'Courier New',monospace;font-size:6px;font-weight:400;text-transform:uppercase;letter-spacing:0.5px;color:#aaa">Flagged</div></div>
   </div>
+</div>
+<div style="padding:0 28px 28px;background:#fff">
+  ${section('Skipped', skipped, '#b45309')}
+  ${section('Not Found', notFound, '#b91c1c')}
+  ${section('Flagged — Enter Manually', flagged, '#1d4ed8')}
+  ${allClearBlock}
+</div>
 </body>
 </html>`;
 }
