@@ -4,21 +4,18 @@
 // [2026-05-28] ICON FIX: Removed chrome.action.onClicked listener.
 // In Firefox, when sidebar_action is defined in the manifest, Firefox natively
 // handles the toolbar button click to toggle the sidebar — the onClicked event
-// never fires. The listener was dead code. Its presence may have been causing
-// Firefox to suppress the toolbar icon render for the sidebar toggle button.
-// The action block has been restored in manifest.json for the pinnable toolbar
-// button, but the onClicked listener remains removed.
+// never fires. The listener was dead code.
 //
-// [2026-05-28] ICON FIX 2: Added browser.action.setIcon() on service worker
-// startup. Firefox MV3 + sidebar_action can fail to render the action icon
-// from the manifest declaration alone — setting it explicitly at runtime
-// forces Firefox to load it correctly for the toolbar button.
+// [2026-05-28] ICON FIX 2: Switched from browser.action.setIcon() to
+// browser.sidebarAction.setIcon(). For sidebar extensions in Firefox, the
+// toolbar button icon is controlled by sidebar_action, not action. MDN docs
+// confirm sidebar_action.default_icon is what shows in "the browser's UI for
+// opening and closing sidebars" — the action block is irrelevant for sidebar
+// extensions. browser.sidebarAction.setIcon() sets this at runtime to ensure
+// Firefox picks it up correctly.
 //
 // [2026-05-28] ICON FIX 3: Fixed XPI build — was using two zip commands with
-// mixed compression levels (-0 for icons, default for JS/HTML). Mixed
-// compression in a single zip archive can cause Firefox's XPI parser to fail
-// reading icon files. All files now zipped in a single command with consistent
-// compression. This is likely the root cause of the beetle fallback icon.
+// mixed compression levels. All files now zipped in a single command.
 
 let botState = {
   phase: 'idle',
@@ -32,9 +29,9 @@ let botState = {
   wasStopped: false
 };
 
-// Force toolbar icon — Firefox MV3 + sidebar_action sometimes ignores
-// the manifest declaration for the action button icon
-browser.action.setIcon({
+// Set sidebar toolbar icon explicitly at runtime — Firefox sometimes fails to
+// pick up sidebar_action.default_icon from the manifest alone
+browser.sidebarAction.setIcon({
   path: {
     16:  'icon16.png',
     32:  'icon32.png',
