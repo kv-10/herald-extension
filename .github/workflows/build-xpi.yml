@@ -26,8 +26,7 @@ jobs:
       - name: Build XPI
         run: |
           rm -f petvalu-bot.xpi
-          zip -j -0 petvalu-bot.xpi icon16.png icon32.png icon48.png icon128.png icon.png
-          zip -j petvalu-bot.xpi manifest.json popup.html popup.js background.js gmail.js vercel.json
+          zip -j petvalu-bot.xpi icon16.png icon32.png icon48.png icon128.png icon.png manifest.json popup.html popup.js background.js gmail.js vercel.json
 
       - name: Commit and push XPI
         run: |
