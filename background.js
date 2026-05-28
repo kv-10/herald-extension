@@ -1,7 +1,7 @@
 // Background service worker - persists bot state across popup open/close
-// v2.2.11
+// v2.2.10
 //
-// [2025-05-28] ICON FIX: Removed chrome.action.onClicked listener.
+// [2026-05-28] ICON FIX: Removed chrome.action.onClicked listener.
 // In Firefox, when sidebar_action is defined in the manifest, Firefox natively
 // handles the toolbar button click to toggle the sidebar — the onClicked event
 // never fires. The listener was dead code. Its presence may have been causing
