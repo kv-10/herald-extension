@@ -1,5 +1,14 @@
 // Background service worker - persists bot state across popup open/close
-// v2.2.10
+// v2.2.11
+//
+// [2025-05-28] ICON FIX: Removed chrome.action.onClicked listener.
+// In Firefox, when sidebar_action is defined in the manifest, Firefox natively
+// handles the toolbar button click to toggle the sidebar — the onClicked event
+// never fires. The listener was dead code. Its presence may have been causing
+// Firefox to suppress the toolbar icon render for the sidebar toggle button.
+// The action block has also been removed from manifest.json (same commit).
+// sidebar_action.default_icon is the correct icon source for sidebar extensions.
+
 let botState = {
   phase: 'idle',
   orderData: null,
@@ -11,10 +20,6 @@ let botState = {
   runId: null,
   wasStopped: false
 };
-
-chrome.action.onClicked.addListener(() => {
-  browser.sidebarAction.toggle();
-});
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'GET_STATE') { sendResponse(botState); return true; }
