@@ -6,8 +6,13 @@
 // handles the toolbar button click to toggle the sidebar — the onClicked event
 // never fires. The listener was dead code. Its presence may have been causing
 // Firefox to suppress the toolbar icon render for the sidebar toggle button.
-// The action block has also been removed from manifest.json (same commit).
-// sidebar_action.default_icon is the correct icon source for sidebar extensions.
+// The action block has been restored in manifest.json for the pinnable toolbar
+// button, but the onClicked listener remains removed.
+//
+// [2026-05-28] ICON FIX 2: Added browser.action.setIcon() on service worker
+// startup. Firefox MV3 + sidebar_action can fail to render the action icon
+// from the manifest declaration alone — setting it explicitly at runtime
+// forces Firefox to load it correctly for the toolbar button.
 
 let botState = {
   phase: 'idle',
@@ -20,6 +25,17 @@ let botState = {
   runId: null,
   wasStopped: false
 };
+
+// Force toolbar icon — Firefox MV3 + sidebar_action sometimes ignores
+// the manifest declaration for the action button icon
+browser.action.setIcon({
+  path: {
+    16:  'icon16.png',
+    32:  'icon32.png',
+    48:  'icon48.png',
+    128: 'icon128.png'
+  }
+});
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'GET_STATE') { sendResponse(botState); return true; }
