@@ -13,6 +13,12 @@
 // startup. Firefox MV3 + sidebar_action can fail to render the action icon
 // from the manifest declaration alone — setting it explicitly at runtime
 // forces Firefox to load it correctly for the toolbar button.
+//
+// [2026-05-28] ICON FIX 3: Fixed XPI build — was using two zip commands with
+// mixed compression levels (-0 for icons, default for JS/HTML). Mixed
+// compression in a single zip archive can cause Firefox's XPI parser to fail
+// reading icon files. All files now zipped in a single command with consistent
+// compression. This is likely the root cause of the beetle fallback icon.
 
 let botState = {
   phase: 'idle',
