@@ -1,3 +1,4 @@
+
 // ── TIMINGS (ms) ──
 const SPEED_PRESETS = {
   normal: { afterFilter: 2500, afterClear: 800,  afterQty: 600,  betweenItems: 400, afterSubFilter: 2500 },
@@ -26,43 +27,6 @@ let pollInterval = null;
 let localState   = null;
 let timerInterval = null;
 let wakeLock      = null;
-
-// ── AUTO MODE ──
-let _autoMode = false;
-
-function loadAutoMode(cb) {
-  chrome.storage.local.get('autoMode', ({ autoMode }) => {
-    _autoMode = autoMode === true;
-    cb();
-  });
-}
-
-function saveAutoMode(val) {
-  _autoMode = val;
-  chrome.storage.local.set({ autoMode: val });
-}
-
-function showModeSelect(isFirstTime) {
-  const sec = document.getElementById('secModeSelect');
-  const badge = document.getElementById('modeCurrentBadge');
-  const badgeText = document.getElementById('modeCurrentText');
-  if (!isFirstTime) {
-    badge.style.display = 'flex';
-    badgeText.textContent = _autoMode ? 'Currently: Auto Setup + Run' : 'Currently: Manual';
-  } else {
-    badge.style.display = 'none';
-  }
-  sec.classList.add('show');
-}
-
-function hideModeSelect() {
-  document.getElementById('secModeSelect').classList.remove('show');
-}
-
-function updateModeSwitchBtn() {
-  const btn = document.getElementById('modeSwitchBtn');
-  if (btn) btn.textContent = _autoMode ? '⚡ Auto' : '🖐 Manual';
-}
 
 // ── STARTUP ──
 function stepSet(id, iconClass, iconContent, subText) {
@@ -127,19 +91,7 @@ async function runStartup() {
   await sleep(200);
   stepShow('stepReady'); stepSet('stepReady', 'spinning-ring', '', 'Loading orders...'); await sleep(300);
   stepSet('stepReady', 'done', '\u2713', 'Ready'); await sleep(350);
-  hideStartup();
-
-  // Check if auto mode has been set before
-  chrome.storage.local.get('autoModeSet', ({ autoModeSet }) => {
-    loadAutoMode(() => {
-      updateModeSwitchBtn();
-      if (!autoModeSet) {
-        showModeSelect(true);
-      } else {
-        renderState(); loadDriveOrders();
-      }
-    });
-  });
+  hideStartup(); renderState(); loadDriveOrders();
 }
 
 function hideStartup() {
@@ -192,36 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('devEmailBtn').addEventListener('click', devTestEmail);
   document.getElementById('devDriveBtn').addEventListener('click', devTestDrive);
   document.getElementById('devUpdateBtn').addEventListener('click', devTestUpdate);
-
-  // Mode select card listeners
-  document.getElementById('modeAutoCard').addEventListener('click', () => {
-    saveAutoMode(true);
-    chrome.storage.local.set({ autoModeSet: true });
-    updateModeSwitchBtn();
-    hideModeSelect();
-    renderState(); loadDriveOrders();
-  });
-  document.getElementById('modeManualCard').addEventListener('click', () => {
-    saveAutoMode(false);
-    chrome.storage.local.set({ autoModeSet: true });
-    updateModeSwitchBtn();
-    hideModeSelect();
-    renderState(); loadDriveOrders();
-  });
-  document.getElementById('modeChangeBtn')?.addEventListener('click', () => {
-    hideModeSelect();
-    renderState(); loadDriveOrders();
-  });
-  document.getElementById('modeSwitchBtn')?.addEventListener('click', () => {
-    showModeSelect(false);
-  });
-
-  // Skip wait button
-  document.getElementById('btnSkipWait')?.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'PV_SKIP_WAIT_SET' });
-    document.getElementById('btnSkipWait').style.display = 'none';
-  });
-
   runStartup();
 });
 
@@ -387,8 +309,6 @@ function getState() { return new Promise(res => { const timer = setTimeout(() =>
 function setState(patch) { return new Promise(res => chrome.runtime.sendMessage({ type:'SET_STATE', state:patch }, r => res(r))); }
 
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.type === 'PV_SHOW_SKIP_BTN') { const b = document.getElementById('btnSkipWait'); if (b) b.style.display = ''; return; }
-  if (msg.type === 'PV_HIDE_SKIP_BTN') { const b = document.getElementById('btnSkipWait'); if (b) b.style.display = 'none'; return; }
   if (msg.type !== 'PUSH_PROGRESS') return;
   const pushed = msg.state;
   if (pushed.runId && localState?.runId && pushed.runId !== localState.runId) return;
@@ -446,10 +366,8 @@ async function loadFromPasteArea() {
 function renderPreview() {
   const items = localState?.orderData?.items || [];
   document.getElementById('previewCount').textContent = items.length;
-  const btnRun = document.getElementById('btnRun');
-  if (btnRun) btnRun.textContent = _autoMode ? 'Auto Setup + Run' : 'Run Order Bot';
   document.getElementById('previewList').innerHTML = items.map(i => { const isCases = i.order<0||i.cases===true; const absOrder=Math.abs(i.order); const orderDisplay=isCases?absOrder+'<span style="color:var(--accent);font-size:9px;font-weight:700;display:block;line-height:1.2">'+(absOrder===1?'case':'cases')+'</span>':absOrder; return `<div class="preview-row"><div class="pr-item">${i.item}</div><div class="pr-order">${orderDisplay}</div><div class="pr-qoh">${i.qoh}</div></div>`; }).join('');
-  const btnClear = document.getElementById('btnClear');
+  const btnRun = document.getElementById('btnRun'); const btnClear = document.getElementById('btnClear');
   if (btnRun) btnRun.onclick = runBot; if (btnClear) btnClear.onclick = clearOrder;
 }
 
@@ -462,10 +380,7 @@ async function runBot() {
   localState = await getState(); renderState(); startPolling(); startTimer(); requestWakeLock();
   const [tab] = await chrome.tabs.query({ active:true, currentWindow:true });
   if (!tab || !tab.url.includes('petvalu.com')) { setStatus('red', 'Switch to the Pet Valu portal tab first!'); await setState({ phase:'loaded' }); stopPolling(); localState = await getState(); renderState(); return; }
-  try {
-    await chrome.scripting.executeScript({ target:{tabId:tab.id}, func:injectBridge });
-    await chrome.scripting.executeScript({ target:{tabId:tab.id}, func:botScript, args:[orderData, TIMINGS(), runId, _autoMode] });
-  }
+  try { await chrome.scripting.executeScript({ target:{tabId:tab.id}, func:injectBridge }); await chrome.scripting.executeScript({ target:{tabId:tab.id}, func:botScript, args:[orderData, TIMINGS(), runId] }); }
   catch(e) { setStatus('red', 'Inject failed: ' + e.message); await setState({ phase:'loaded' }); stopPolling(); localState = await getState(); renderState(); }
 }
 
@@ -498,8 +413,6 @@ function renderLog() {
 
 function renderComplete() {
   stopTimer(); releaseWakeLock();
-  const skipBtn = document.getElementById('btnSkipWait');
-  if (skipBtn) skipBtn.style.display = 'none';
   const r = localState?.results || {};
   document.getElementById('doneEntered').textContent  = (r.entered||[]).length;
   document.getElementById('doneSkipped').textContent  = (r.skipped||[]).length;
@@ -673,22 +586,17 @@ async function resetToStart() {
 
 function updateStatusBar() {
   const phase=localState?.phase||'idle';
-  const modeLabel = _autoMode ? ' [Auto]' : '';
-  const map={idle:['','Select an order from Drive or open the portal'],loaded:['green',`Loaded: ${localState?.orderData?.store} \u2014 ${localState?.orderData?.items?.length} items${modeLabel}`],running:['yellow','Bot running...'],complete:['green',`Done \u2014 ${(localState?.results?.entered||[]).length} entered, ${(localState?.results?.notFound||[]).length} not found`]};
+  const map={idle:['','Select an order from Drive or open the portal'],loaded:['green',`Loaded: ${localState?.orderData?.store} \u2014 ${localState?.orderData?.items?.length} items`],running:['yellow','Bot running...'],complete:['green',`Done \u2014 ${(localState?.results?.entered||[]).length} entered, ${(localState?.results?.notFound||[]).length} not found`]};
   const [type,text]=map[phase]||['','']; setStatus(type,text);
 }
 function setStatus(type,text) { document.getElementById('statusDot').className='status-dot'+(type?' '+type:''); document.getElementById('statusText').textContent=text; }
 
 function injectBridge() { if(window.__pvBridgeReady)return; window.__pvBridgeReady=true; }
 
-async function botScript(orderData, timings, runId, autoMode) {
+async function botScript(orderData, timings, runId) {
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   async function checkStop(){return new Promise(res=>{chrome.runtime.sendMessage({type:'PV_STOP_CHECK'},resp=>res(resp?.stop===true));});}
-  async function checkSkipWait(){return new Promise(res=>{chrome.runtime.sendMessage({type:'PV_SKIP_WAIT_CHECK'},resp=>res(resp?.skip===true));});}
   function sendProgress(msg,current,total,kind,results){chrome.runtime.sendMessage({type:'PV_PROGRESS',msg,current,total,kind:kind||'info',results,runId});}
-  function sendSetupLog(msg,kind){chrome.runtime.sendMessage({type:'PV_PROGRESS',msg,current:0,total:orderData.items.length,kind:kind||'info',results:{entered:[],skipped:[],notFound:[],flagged:[]},runId});}
-  function showSkipBtn(){chrome.runtime.sendMessage({type:'PV_SHOW_SKIP_BTN',runId});}
-  function hideSkipBtn(){chrome.runtime.sendMessage({type:'PV_HIDE_SKIP_BTN',runId});}
   function getFilterInput(label){return document.querySelector(`input[aria-label="${label}"]`);}
   async function setFilter(label,value){const input=getFilterInput(label);if(!input)return false;input.focus();input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));await sleep(100);input.value=String(value).toUpperCase();input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));input.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true}));return true;}
   async function clearFilter(label,forceReal){const input=getFilterInput(label);if(!input)return;if(timings.overwriteMode&&!forceReal){input.focus();input.select();}else{input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));if(timings.afterClear>0)await sleep(timings.afterClear);}}
@@ -711,97 +619,6 @@ async function botScript(orderData, timings, runId, autoMode) {
   function parseExtPrice(row){const raw=getCellText(row,'value');if(!raw)return 0;const n=parseFloat(raw.replace(/[$,]/g,''));return isNaN(n)?0:n;}
   function calcQty(appOrder,appQoh,avgSales,multiple,isCases){let order=appOrder;if(isCases&&order>0)order=order*multiple;let qty;if(order===0){if(avgSales===0)return{qty:null,reason:'Skipped \u2014 avg sales is 0'};qty=Math.ceil(avgSales*4-appQoh);if(qty<=0)return{qty:null,reason:`Skipped \u2014 already have enough on hand (avg=${avgSales}, qoh=${appQoh})`};}else{qty=order;if(qty<=0)return{qty:null,reason:'Skipped \u2014 order qty \u2264 0'};}if(multiple>1){const rem=qty%multiple;if(rem!==0)qty+=(multiple-rem);}return{qty};}
   async function enterQty(row,qty){const cell=row.querySelector('[col-id="unit_qty_chg"]');if(!cell)return false;cell.click();await sleep(250);cell.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true,view:window}));await sleep(400);let input=cell.querySelector('input[aria-label="Input Editor"]')||cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');if(!input){cell.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',keyCode:113,bubbles:true}));await sleep(350);input=cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');}if(!input)return false;input.focus();input.select();input.value=String(qty);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));input.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',keyCode:9,bubbles:true}));await sleep(timings.afterQty);return true;}
-
-  // ── PORTAL SETUP (Auto mode only) ──
-  async function setupPortal() {
-    const storeNumbers={'Lakeshore Rd':'2087','Lambton Mall':'2356','Corunna':'2372','London':'2412'};
-    const storeNum=storeNumbers[orderData.store];
-    if(!storeNum){sendSetupLog('Setup: unknown store name, skipping auto setup','skip');return;}
-
-    // Step 1: Clear existing store selection if present
-    sendSetupLog('Setup: checking for existing store selection...','info');
-    const existingBadge=document.querySelector('div.agr-close-tab');
-    if(existingBadge){
-      sendSetupLog('Setup: clearing existing store...','info');
-      existingBadge.click();
-      await sleep(2000);
-    }
-
-    // Step 2: Enter store number
-    sendSetupLog(`Setup: entering store ${storeNum}...`,'info');
-    const storeInput=document.querySelector('input[aria-autocomplete="list"]');
-    if(!storeInput){sendSetupLog('Setup: could not find store input \u2014 skipping auto setup','skip');return;}
-    storeInput.focus();
-    storeInput.value='';
-    storeInput.dispatchEvent(new Event('input',{bubbles:true}));
-    await sleep(300);
-    storeInput.value=storeNum;
-    storeInput.dispatchEvent(new Event('input',{bubbles:true}));
-    storeInput.dispatchEvent(new Event('change',{bubbles:true}));
-    storeInput.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:13,bubbles:true}));
-    storeInput.dispatchEvent(new KeyboardEvent('keyup',{key:'Enter',keyCode:13,bubbles:true}));
-
-    // Step 3: Wait 10s for store to load
-    sendSetupLog('Setup: waiting for store to load (10s)...','info');
-    await sleep(10000);
-
-    // Step 4: Open column sidebar and select all columns
-    sendSetupLog('Setup: enabling all columns...','info');
-    const colBtn=document.querySelector('button.ag-side-button-button');
-    if(colBtn){
-      colBtn.click();
-      await sleep(600);
-      const selectAllChk=document.querySelector('input[aria-label="Toggle Select All Columns"]');
-      if(selectAllChk){
-        selectAllChk.click();
-        await sleep(500);
-      }
-      colBtn.click();
-      await sleep(500);
-    } else {
-      sendSetupLog('Setup: column button not found, skipping','skip');
-    }
-
-    // Step 5: Zero out preloaded items
-    sendSetupLog('Setup: zeroing out preloaded items...','info');
-    const rows=getVisibleRows();
-    if(rows.length>0){
-      const ok=await enterQty(rows[0],0);
-      if(ok){
-        await sleep(300);
-        document.dispatchEvent(new KeyboardEvent('keydown',{key:'c',keyCode:67,ctrlKey:true,bubbles:true}));
-        await sleep(200);
-        document.dispatchEvent(new KeyboardEvent('keydown',{key:'a',keyCode:65,ctrlKey:true,bubbles:true}));
-        await sleep(200);
-        document.dispatchEvent(new KeyboardEvent('keydown',{key:'v',keyCode:86,ctrlKey:true,bubbles:true}));
-        await sleep(300);
-        sendSetupLog('Setup: preloaded items zeroed. Waiting 2 minutes for portal to reset...','info');
-      } else {
-        sendSetupLog('Setup: could not enter qty on first row \u2014 waiting anyway','skip');
-      }
-    } else {
-      sendSetupLog('Setup: no preloaded rows found \u2014 portal may already be clean','info');
-    }
-
-    // Step 6: 2 minute wait with live countdown + skip
-    showSkipBtn();
-    const waitMs=120000;
-    const waitStart=Date.now();
-    while(Date.now()-waitStart<waitMs){
-      const remaining=Math.max(0,waitMs-(Date.now()-waitStart));
-      const mins=Math.floor(remaining/60000);
-      const secs=String(Math.floor((remaining%60000)/1000)).padStart(2,'0');
-      sendSetupLog(`Waiting for portal to reset... (${mins}:${secs} remaining)`,'info');
-      const skip=await checkSkipWait();
-      if(skip){sendSetupLog('Setup: wait skipped \u2014 proceeding to order entry','info');break;}
-      await sleep(1000);
-    }
-    hideSkipBtn();
-    sendSetupLog('Setup complete \u2014 starting order entry','ok');
-  }
-
-  // ── MAIN BOT LOOP ──
-  if(autoMode) await setupPortal();
 
   const items=orderData.items, results={entered:[],skipped:[],notFound:[],flagged:[]};
   for(let i=0;i<items.length;i++){
