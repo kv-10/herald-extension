@@ -491,7 +491,7 @@ function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-  @page { margin: 6mm; }
+  @page { margin: 7mm; }
   body { font-family:'DM Sans',Arial,sans-serif; color:#111; background:#fff; margin:0; padding:0; }
   @media print { tr { page-break-inside:avoid; } }
 </style>
@@ -685,7 +685,7 @@ async function devTestDrive() {
   statusEl.style.color='var(--muted)';statusEl.textContent='Uploading test files via real upload path...';
   const date=new Date().toLocaleDateString('en-CA'),base=`DEV_TEST_Lakeshore_Rd_${date}`;
   const jsonContent=JSON.stringify({store:'Lakeshore Rd',date,_devTest:true,items:[{item:'10045231',order:6,qoh:10}]},null,2);
-  const csvContent=`Store,Date,Item #,Order Qty,On Hand,Status,Notes\n\"Lakeshore Rd\",\"${date}\",\"10045231\",6,10,Entered,\n`;
+  const csvContent=`Store,Date,Item #,Order Qty,On Hand,Status,Notes\n"Lakeshore Rd","${date}","10045231",6,10,Entered,\n`;
   try{const results=await Promise.all([chrome.runtime.sendMessage({type:'APPS_POST',payload:{filename:base+'.json',content:jsonContent}}),chrome.runtime.sendMessage({type:'APPS_POST',payload:{filename:base+'.csv',content:csvContent}})]);const allOk=results.every(r=>r?.ok);statusEl.style.color=allOk?'var(--accent)':'var(--red)';statusEl.textContent=allOk?'\u2713 Uploaded \u2014 check Google Drive':'\u2717 Upload failed';}
   catch(e){statusEl.style.color='var(--red)';statusEl.textContent='\u2717 Error: '+e.message;}
 }
