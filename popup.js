@@ -616,7 +616,27 @@ async function botScript(orderData, timings, runId) {
   function getAgApi(){try{const agGridEl=document.querySelector('ag-grid-angular');if(!agGridEl)return null;const inst=agGridEl['__ag_grid_instance'];if(inst?.api?.forEachNodeAfterFilter)return inst.api;if(inst?.forEachNodeAfterFilter)return inst;if(inst?.gridOptions?.api?.forEachNodeAfterFilter)return inst.gridOptions.api;}catch(e){console.log('[PV Bot] getAgApi error:',e);}return null;}
   function getRowDataFromGrid(itemId){try{const api=getAgApi();if(!api)return null;let found=null;api.forEachNodeAfterFilter(node=>{if(found)return;const d=node.data;if(d&&String(d.item_no||'').trim().toLowerCase()===String(itemId).trim().toLowerCase())found=d;});return found;}catch(e){return null;}}
   function getItemDescription(row,gridData){const candidates=['item_name','item_description','description','product_description','desc','item_desc'];for(const col of candidates){const v=(gridData&&gridData[col])||getCellText(row,col);if(v&&v.trim())return v.trim();}return '';}
+
+  // Read extPrice from ag-grid data API — not DOM — so async portal recalc doesn't matter
+  function getExtPriceFromGrid(itemId){
+    try{
+      const api=getAgApi(); if(!api) return 0;
+      let found=0;
+      api.forEachNodeAfterFilter(node=>{
+        if(found) return;
+        const d=node.data;
+        if(d&&String(d.item_no||'').trim().toLowerCase()===String(itemId).trim().toLowerCase()){
+          const raw=d.value||d.ext_price||d.extended_price||d.net_wholesale||'';
+          const n=parseFloat(String(raw).replace(/[$,]/g,''));
+          if(!isNaN(n)&&n>0) found=n;
+        }
+      });
+      return found;
+    }catch(e){return 0;}
+  }
+  // DOM fallback for extPrice
   function parseExtPrice(row){const raw=getCellText(row,'value');if(!raw)return 0;const n=parseFloat(raw.replace(/[$,]/g,''));return isNaN(n)?0:n;}
+
   function calcQty(appOrder,appQoh,avgSales,multiple,isCases){let order=appOrder;if(isCases&&order>0)order=order*multiple;let qty;if(order===0){if(avgSales===0)return{qty:null,reason:'Skipped \u2014 avg sales is 0'};qty=Math.ceil(avgSales*4-appQoh);if(qty<=0)return{qty:null,reason:`Skipped \u2014 already have enough on hand (avg=${avgSales}, qoh=${appQoh})`};}else{qty=order;if(qty<=0)return{qty:null,reason:'Skipped \u2014 order qty \u2264 0'};}if(multiple>1){const rem=qty%multiple;if(rem!==0)qty+=(multiple-rem);}return{qty};}
   async function enterQty(row,qty){const cell=row.querySelector('[col-id="unit_qty_chg"]');if(!cell)return false;cell.click();await sleep(250);cell.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true,view:window}));await sleep(400);let input=cell.querySelector('input[aria-label="Input Editor"]')||cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');if(!input){cell.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',keyCode:113,bubbles:true}));await sleep(350);input=cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');}if(!input)return false;input.focus();input.select();input.value=String(qty);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));input.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',keyCode:9,bubbles:true}));await sleep(timings.afterQty);return true;}
 
@@ -649,7 +669,8 @@ async function botScript(orderData, timings, runId) {
     if(calcResult.qty===null){results.skipped.push({item:id,desc:itemDesc,reason:calcResult.reason});sendProgress(`${id} \u2014 ${calcResult.reason}`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const qty=calcResult.qty, ok=await enterQty(targetRow,qty);
     if(ok){
-      const extPrice=parseExtPrice(targetRow);
+      // Try grid API first (not affected by async DOM recalc), fall back to DOM
+      const extPrice = getExtPriceFromGrid(id) || parseExtPrice(targetRow);
       results.entered.push({item:id,qty,usedSub,desc:itemDesc,extPrice});
       sendProgress(`${id} \u2014 entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);
     } else {
