@@ -45,14 +45,14 @@ async function runStartup() {
   stepSet('stepInit', 'spinning-ring', '', 'Loading state...');
   await sleep(300);
   localState = await getState();
-  stepSet('stepInit', 'done', '\u2713', 'Loaded');
+  stepSet('stepInit', 'done', '✓', 'Loaded');
   if (localState.phase !== 'idle') {
     stepShow('stepUpdate');
-    stepSet('stepUpdate', 'done', '\u2713', 'Skipped \u2014 bot is running');
+    stepSet('stepUpdate', 'done', '✓', 'Skipped — bot is running');
     stepShow('stepReady');
     stepSet('stepReady', 'spinning-ring', '', 'Resuming session...');
     await sleep(400);
-    stepSet('stepReady', 'done', '\u2713', 'Session restored');
+    stepSet('stepReady', 'done', '✓', 'Session restored');
     await sleep(300);
     hideStartup(); renderState();
     if (localState.phase === 'running') { startPolling(); resumeTimer(); }
@@ -74,23 +74,23 @@ async function runStartup() {
     if (!match) throw new Error('Could not parse update.xml');
     const remoteVersion = match[1];
     if (remoteVersion !== currentVersion) {
-      stepSet('stepUpdate', 'update', '\u2191', 'v' + remoteVersion + ' available');
+      stepSet('stepUpdate', 'update', '↑', 'v' + remoteVersion + ' available');
       await sleep(300);
       const secStartup = document.getElementById('secStartup');
       const secUpdate  = document.getElementById('secUpdate');
       secStartup.style.transition = 'opacity 0.3s ease'; secStartup.style.opacity = '0';
       await sleep(300); secStartup.style.display = 'none';
       document.getElementById('updTitle').textContent = 'Update Available';
-      document.getElementById('updVersion').textContent = currentVersion + ' \u2192 v' + remoteVersion;
+      document.getElementById('updVersion').textContent = currentVersion + ' → v' + remoteVersion;
       secUpdate.classList.add('show'); return;
-    } else { stepSet('stepUpdate', 'done', '\u2713', 'Up to date (v' + currentVersion + ')'); }
+    } else { stepSet('stepUpdate', 'done', '✓', 'Up to date (v' + currentVersion + ')'); }
   } catch(e) {
     const cv = browser.runtime.getManifest().version;
-    stepSet('stepUpdate', 'warn', '!', 'Could not check \u2014 continuing (v' + cv + ')');
+    stepSet('stepUpdate', 'warn', '!', 'Could not check — continuing (v' + cv + ')');
   }
   await sleep(200);
   stepShow('stepReady'); stepSet('stepReady', 'spinning-ring', '', 'Loading orders...'); await sleep(300);
-  stepSet('stepReady', 'done', '\u2713', 'Ready'); await sleep(350);
+  stepSet('stepReady', 'done', '✓', 'Ready'); await sleep(350);
   hideStartup(); renderState(); loadDriveOrders();
 }
 
@@ -106,7 +106,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function updateOverwriteLabel() {
   const lbl = document.getElementById('ciOverwriteLabel');
-  if (lbl) lbl.textContent = _overwriteMode ? 'On \u2014 select-all before typing' : 'Off \u2014 clear field first';
+  if (lbl) lbl.textContent = _overwriteMode ? 'On — select-all before typing' : 'Off — clear field first';
   const track = document.getElementById('ciOverwriteTrack'); const thumb = document.getElementById('ciOverwriteThumb');
   if (track) track.style.background = _overwriteMode ? 'var(--accent)' : 'var(--s3)';
   if (thumb) thumb.style.transform  = _overwriteMode ? 'translateX(16px)' : 'translateX(0)';
@@ -184,19 +184,19 @@ function formatDate(dateStr) { const d = new Date(dateStr + 'T12:00:00'); return
 
 function groupCard(g, gi) {
   const dates = [...new Set(g.orders.map(o => o.dateStr))].sort();
-  const dateLabel = dates.length > 1 ? `${formatDate(dates[0])} \u2013 ${formatDate(dates[dates.length - 1])}` : formatDate(dates[0]);
+  const dateLabel = dates.length > 1 ? `${formatDate(dates[0])} – ${formatDate(dates[dates.length - 1])}` : formatDate(dates[0]);
   const storeNum = storeLabel(g.store).match(/#\d+/)?.[0] || '';
-  const orderRows = g.orders.map((o, oi) => { const cntStr = o.itemCount != null ? ` &nbsp;\u00b7&nbsp; ${o.itemCount} items` : ''; return `<div class="sg-order" data-gi="${gi}" data-oi="${oi}"><div><div class="sg-op">${o.operator}</div><div class="sg-meta">${formatDate(o.dateStr)}${cntStr}</div></div><div class="sg-arr">\u203a</div></div>`; }).join('');
+  const orderRows = g.orders.map((o, oi) => { const cntStr = o.itemCount != null ? ` &nbsp;·&nbsp; ${o.itemCount} items` : ''; return `<div class="sg-order" data-gi="${gi}" data-oi="${oi}"><div><div class="sg-op">${o.operator}</div><div class="sg-meta">${formatDate(o.dateStr)}${cntStr}</div></div><div class="sg-arr">›</div></div>`; }).join('');
   const loadLabel = g.orders.length === 2 ? 'Load Both Together' : `Load All Together (${g.orders.length})`;
   const bothBtn = g.orders.length >= 2 ? `<div class="sg-both" data-gi="${gi}" data-both="1">${loadLabel}</div>` : '';
-  return `<div class="store-group"><div class="sg-header"><div class="sg-store-name">${storeLabelPlain(g.store)}</div><div class="sg-store-sub" id="sg-sub-${gi}">${storeNum} &nbsp;\u00b7&nbsp; ${dateLabel}</div></div>${orderRows}${bothBtn}</div>`;
+  return `<div class="store-group"><div class="sg-header"><div class="sg-store-name">${storeLabelPlain(g.store)}</div><div class="sg-store-sub" id="sg-sub-${gi}">${storeNum} &nbsp;·&nbsp; ${dateLabel}</div></div>${orderRows}${bothBtn}</div>`;
 }
 
 function renderGroups(groups) {
   const list = document.getElementById('driveOrderList');
   const recent = groups.slice(0, 3); const older = groups.slice(3);
   let html = recent.map((g, gi) => groupCard(g, gi)).join('');
-  if (older.length > 0) { html += `<div id="olderToggle" style="text-align:center;padding:10px 0 4px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);user-select:none"><span id="olderToggleLabel">\u25be Show ${older.length} older order${older.length !== 1 ? 's' : ''}</span></div><div id="olderOrders" style="display:none">${older.map((g, i) => groupCard(g, 3 + i)).join('')}</div>`; }
+  if (older.length > 0) { html += `<div id="olderToggle" style="text-align:center;padding:10px 0 4px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);user-select:none"><span id="olderToggleLabel">▾ Show ${older.length} older order${older.length !== 1 ? 's' : ''}</span></div><div id="olderOrders" style="display:none">${older.map((g, i) => groupCard(g, 3 + i)).join('')}</div>`; }
   list.innerHTML = html;
   list.querySelector('#olderToggle')?.addEventListener('click', toggleOlderOrders);
   list.querySelectorAll('.sg-order').forEach(el => { el.addEventListener('click', () => { const g = groups[+el.dataset.gi]; loadFromDrive(g.orders[+el.dataset.oi].id, g.orders[+el.dataset.oi].name); }); });
@@ -207,7 +207,7 @@ function toggleOlderOrders() {
   const el = document.getElementById('olderOrders'); const label = document.getElementById('olderToggleLabel');
   const count = document.querySelectorAll('#olderOrders .store-group').length; if (!el) return;
   const open = el.style.display === 'none'; el.style.display = open ? '' : 'none';
-  if (label) label.textContent = open ? '\u25b4 Hide older orders' : `\u25be Show ${count} older order${count !== 1 ? 's' : ''}`;
+  if (label) label.textContent = open ? '▴ Hide older orders' : `▾ Show ${count} older order${count !== 1 ? 's' : ''}`;
 }
 
 async function backfillItemCounts(groups) {
@@ -215,13 +215,13 @@ async function backfillItemCounts(groups) {
     const jsonOrders = g.orders.filter(o => o.name && o.name.endsWith('.json')); if (!jsonOrders.length) return;
     try {
       const contents = await Promise.all(jsonOrders.map(o => fetchOrder(o.id)));
-      contents.forEach((content, ci) => { const o = jsonOrders[ci]; const oi = g.orders.indexOf(o); o.itemCount = content.items?.length ?? 0; const el = document.querySelector(`[data-gi="${gi}"][data-oi="${oi}"] .sg-meta`); if (el) el.innerHTML = `${formatDate(o.dateStr)} &nbsp;\u00b7&nbsp; ${o.itemCount} items`; });
+      contents.forEach((content, ci) => { const o = jsonOrders[ci]; const oi = g.orders.indexOf(o); o.itemCount = content.items?.length ?? 0; const el = document.querySelector(`[data-gi="${gi}"][data-oi="${oi}"] .sg-meta`); if (el) el.innerHTML = `${formatDate(o.dateStr)} &nbsp;·&nbsp; ${o.itemCount} items`; });
       const itemMap = new Map(); contents.forEach(c => c.items?.forEach(i => itemMap.set(String(i.item), i)));
       const dates = [...new Set(g.orders.map(o => o.dateStr))].sort();
-      const dateLabel = dates.length > 1 ? `${formatDate(dates[0])} \u2013 ${formatDate(dates[dates.length-1])}` : formatDate(dates[0]);
+      const dateLabel = dates.length > 1 ? `${formatDate(dates[0])} – ${formatDate(dates[dates.length-1])}` : formatDate(dates[0]);
       const storeNum = storeLabel(g.store).match(/#\d+/)?.[0] || '';
       const subEl = document.getElementById(`sg-sub-${gi}`);
-      if (subEl) subEl.innerHTML = `${storeNum} &nbsp;\u00b7&nbsp; ${dateLabel} &nbsp;\u00b7&nbsp; <span class="sg-total">${itemMap.size} items</span>`;
+      if (subEl) subEl.innerHTML = `${storeNum} &nbsp;·&nbsp; ${dateLabel} &nbsp;·&nbsp; <span class="sg-total">${itemMap.size} items</span>`;
     } catch(e) {}
   }));
 }
@@ -252,7 +252,7 @@ async function fetchOrder(fileId) {
 
 async function loadFromDrive(fileId, filename) {
   setStatus('yellow', 'Loading order...');
-  try { const content = await fetchOrder(fileId); await loadOrder(content); setStatus('green', `Loaded: ${storeLabelPlain(content.store)} \u2014 ${content.items.length} items`); }
+  try { const content = await fetchOrder(fileId); await loadOrder(content); setStatus('green', `Loaded: ${storeLabelPlain(content.store)} — ${content.items.length} items`); }
   catch(e) { setStatus('red', 'Failed to load order from Drive'); }
 }
 
@@ -264,7 +264,7 @@ async function loadBothFromDrive(orders, gi) {
     const merged = { store: contents[0].store, date: contents[contents.length-1].date || contents[0].date, items: Array.from(itemMap.values()) };
     await loadOrder(merged);
     if (gi != null) { const subEl = document.getElementById(`sg-sub-${gi}`); if (subEl) { const span = subEl.querySelector('.sg-total'); if (span) span.textContent = merged.items.length + ' items'; } }
-    setStatus('green', `Loaded: ${storeLabelPlain(merged.store)} \u2014 ${merged.items.length} items`);
+    setStatus('green', `Loaded: ${storeLabelPlain(merged.store)} — ${merged.items.length} items`);
   } catch(e) { setStatus('red', 'Failed to load orders from Drive'); }
 }
 
@@ -298,12 +298,12 @@ function setSpeed(speed) {
   const activeBtn = document.getElementById('speed' + speed.charAt(0).toUpperCase() + speed.slice(1));
   if (activeBtn && activeMap[speed]) activeBtn.classList.add(activeMap[speed]);
   document.getElementById('customInputs')?.classList.toggle('show', speed === 'custom');
-  const notes = { normal:'Filter wait: 2500ms \u00b7 Clear: 800ms \u00b7 Qty: 600ms \u00b7 Between: 400ms', fast:'Filter wait: 1600ms \u00b7 Clear: 600ms \u00b7 Qty: 400ms \u00b7 Between: 250ms', custom:'Using your custom timing values below', warp:'Filter: 600ms \u00b7 Qty: 100ms \u00b7 Between: 100ms \u00b7 Overwrite on' };
+  const notes = { normal:'Filter wait: 2500ms · Clear: 800ms · Qty: 600ms · Between: 400ms', fast:'Filter wait: 1600ms · Clear: 600ms · Qty: 400ms · Between: 250ms', custom:'Using your custom timing values below', warp:'Filter: 600ms · Qty: 100ms · Between: 100ms · Overwrite on' };
   const note = document.getElementById('speedNote'); if (note) note.textContent = notes[speed] || '';
   saveSpeedPrefs();
 }
 
-function togglePaste() { const body = document.getElementById('pasteBody'); const toggle = document.getElementById('pasteToggle'); const open = body.classList.toggle('open'); toggle.textContent = open ? '\u25b4 Hide manual entry' : '\u25be Enter order manually'; }
+function togglePaste() { const body = document.getElementById('pasteBody'); const toggle = document.getElementById('pasteToggle'); const open = body.classList.toggle('open'); toggle.textContent = open ? '▴ Hide manual entry' : '▾ Enter order manually'; }
 
 function getState() { return new Promise(res => { const timer = setTimeout(() => res({ phase:'idle' }), 3000); chrome.runtime.sendMessage({ type:'GET_STATE' }, r => { clearTimeout(timer); res(r || { phase:'idle' }); }); }); }
 function setState(patch) { return new Promise(res => chrome.runtime.sendMessage({ type:'SET_STATE', state:patch }, r => res(r))); }
@@ -351,16 +351,16 @@ function renderState() {
 function onPasteAreaInput() { document.getElementById('btnLoad').disabled = document.getElementById('pasteArea').value.trim().length === 0; }
 async function loadFromPasteArea() {
   const text = document.getElementById('pasteArea').value.trim(); const start = text.indexOf('{');
-  if (start === -1) { setStatus('red', 'No JSON found \u2014 copy from the phone app'); return; }
+  if (start === -1) { setStatus('red', 'No JSON found — copy from the phone app'); return; }
   let depth = 0, end = -1;
   for (let i = start; i < text.length; i++) { if (text[i] === '{') depth++; else if (text[i] === '}') { depth--; if (depth === 0) { end = i; break; } } }
-  if (end === -1) { setStatus('red', 'No JSON found \u2014 copy from the phone app'); return; }
+  if (end === -1) { setStatus('red', 'No JSON found — copy from the phone app'); return; }
   try {
     const data = JSON.parse(text.slice(start, end + 1));
     if (!data.items || !Array.isArray(data.items)) throw new Error('bad');
     await setState({ phase:'loaded', orderData:data, results:{entered:[],skipped:[],notFound:[],flagged:[]}, log:[], progress:{current:0,total:data.items.length}, stopRequested:false });
     localState = await getState(); renderState();
-  } catch(e) { setStatus('red', 'Invalid data \u2014 copy from the phone app first'); setTimeout(() => setStatus('', 'Ready'), 3000); }
+  } catch(e) { setStatus('red', 'Invalid data — copy from the phone app first'); setTimeout(() => setStatus('', 'Ready'), 3000); }
 }
 
 function renderPreview() {
@@ -421,14 +421,14 @@ function renderComplete() {
   const nfBtn = document.getElementById('btnDownloadNF');
   if ((r.notFound||[]).length>0||(r.flagged||[]).length>0||(r.skipped||[]).length>0) { nfBtn.style.display='block'; nfBtn.onclick=downloadNotFound; }
   const resetBtn = document.getElementById('btnReset'); if (resetBtn) resetBtn.onclick = resetToStart;
-  setStatus('green', `Done \u2014 ${(r.entered||[]).length} entered, ${(r.notFound||[]).length} not found`);
+  setStatus('green', `Done — ${(r.entered||[]).length} entered, ${(r.notFound||[]).length} not found`);
   if (localState?.wasStopped) showEmailPrompt(); else sendCompletionEmail();
 }
 
 function showEmailPrompt() {
   const el = document.getElementById('emailStatusBadge'); if (!el) return;
   el.style.display='flex'; el.className='email-badge'; el.style.background='var(--yd)'; el.style.borderColor='rgba(146,64,14,0.3)'; el.style.color='var(--yellow)'; el.style.flexDirection='column'; el.style.alignItems='flex-start'; el.style.gap='8px';
-  el.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--yellow)">Bot was stopped \u2014 send completion email?</div><div style="display:flex;gap:6px;width:100%"><button id="emailPromptYes" style="flex:1;padding:6px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Send Email</button><button id="emailPromptNo" style="flex:1;padding:6px;background:var(--s2);color:var(--text2);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Skip</button></div>`;
+  el.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--yellow)">Bot was stopped — send completion email?</div><div style="display:flex;gap:6px;width:100%"><button id="emailPromptYes" style="flex:1;padding:6px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Send Email</button><button id="emailPromptNo" style="flex:1;padding:6px;background:var(--s2);color:var(--text2);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Skip</button></div>`;
   document.getElementById('emailPromptYes').addEventListener('click', () => { el.innerHTML=''; el.style.display='none'; sendCompletionEmail(); });
   document.getElementById('emailPromptNo').addEventListener('click',  () => { el.innerHTML=''; el.style.display='none'; });
 }
@@ -519,7 +519,7 @@ function buildReportHTML({ store, date, runtimeStr, entered, skipped, notFound, 
 <div style="padding:0 28px 28px;background:#fff">
   ${section('Skipped', skipped, '#b45309')}
   ${section('Not Found', notFound, '#b91c1c')}
-  ${section('Flagged \u2014 Enter Manually', flagged, '#1d4ed8')}
+  ${section('Flagged — Enter Manually', flagged, '#1d4ed8')}
   ${allClearBlock}
 </div>
 </body>
@@ -552,8 +552,8 @@ function setEmailStatus(state) {
   const el=document.getElementById('emailStatusBadge'); if(!el) return;
   el.style.display='flex'; el.style.animation='none'; void el.offsetWidth;
   if(state==='sending'){el.className='email-badge email-sending';el.innerHTML='<span class="email-dot-spin"></span> Sending receipt...';}
-  else if(state==='sent'){el.className='email-badge email-sent';el.innerHTML='\u2713 Receipt sent to sarniapetvalu@gmail.com';el.style.animation='badgePop 0.4s cubic-bezier(0.22,1,0.36,1) forwards';}
-  else if(state==='failed'){el.className='email-badge email-failed';el.innerHTML='\u2717 Receipt failed to send';el.style.animation='badgePop 0.4s cubic-bezier(0.22,1,0.36,1) forwards';}
+  else if(state==='sent'){el.className='email-badge email-sent';el.innerHTML='✓ Receipt sent to sarniapetvalu@gmail.com';el.style.animation='badgePop 0.4s cubic-bezier(0.22,1,0.36,1) forwards';}
+  else if(state==='failed'){el.className='email-badge email-failed';el.innerHTML='✗ Receipt failed to send';el.style.animation='badgePop 0.4s cubic-bezier(0.22,1,0.36,1) forwards';}
 }
 
 async function downloadNotFound() {
@@ -586,7 +586,7 @@ async function resetToStart() {
 
 function updateStatusBar() {
   const phase=localState?.phase||'idle';
-  const map={idle:['','Select an order from Drive or open the portal'],loaded:['green',`Loaded: ${localState?.orderData?.store} \u2014 ${localState?.orderData?.items?.length} items`],running:['yellow','Bot running...'],complete:['green',`Done \u2014 ${(localState?.results?.entered||[]).length} entered, ${(localState?.results?.notFound||[]).length} not found`]};
+  const map={idle:['','Select an order from Drive or open the portal'],loaded:['green',`Loaded: ${localState?.orderData?.store} — ${localState?.orderData?.items?.length} items`],running:['yellow','Bot running...'],complete:['green',`Done — ${(localState?.results?.entered||[]).length} entered, ${(localState?.results?.notFound||[]).length} not found`]};
   const [type,text]=map[phase]||['','']; setStatus(type,text);
 }
 function setStatus(type,text) { document.getElementById('statusDot').className='status-dot'+(type?' '+type:''); document.getElementById('statusText').textContent=text; }
@@ -603,14 +603,11 @@ async function botScript(orderData, timings, runId) {
   function getVisibleRows(){return Array.from(document.querySelectorAll('.ag-row[role="row"]')).filter(r=>!r.classList.contains('ag-row-loading')&&!r.classList.contains('ag-row-stub'));}
   function findExactRow(rows,id){return rows.find(r=>{const c=r.querySelector('[col-id="item_no"]');return c&&c.textContent.trim().toLowerCase()===String(id).trim().toLowerCase();})||null;}
   function findSubRow(rows,id){
+    // [2026-09-25] The portal's Substituted Item column id is "subst_item_No", not "substituted_item".
+    // The old check never matched, so every order line placed under a substitute number was reported
+    // as not found. Check the real id first; keep the old ids as fallbacks.
     const idL=String(id).trim().toLowerCase();
-    return rows.find(r=>{
-      const subCell=r.querySelector('[col-id="substituted_item"]');
-      if(subCell&&subCell.textContent.trim().toLowerCase()===idL) return true;
-      const itemCell=r.querySelector('[col-id="item_no"]');
-      if(itemCell&&itemCell.textContent.trim().toLowerCase()===idL) return true;
-      return false;
-    })||null;
+    return rows.find(r=>['subst_item_No','substituted_item','item_no'].some(col=>getCellText(r,col).toLowerCase()===idL))||null;
   }
   function getCellText(row,colId){let c=row.querySelector(`[col-id="${colId}"]`);if(c)return c.textContent.trim();const rowId=row.getAttribute('row-id');if(rowId!==null){c=document.querySelector(`.ag-center-cols-container [row-id="${rowId}"] [col-id="${colId}"]`)||document.querySelector(`.ag-pinned-left-cols-container [row-id="${rowId}"] [col-id="${colId}"]`)||document.querySelector(`[row-id="${rowId}"] [col-id="${colId}"]`);if(c)return c.textContent.trim();}return '';}
   function getAgApi(){try{const agGridEl=document.querySelector('ag-grid-angular');if(!agGridEl)return null;const inst=agGridEl['__ag_grid_instance'];if(inst?.api?.forEachNodeAfterFilter)return inst.api;if(inst?.forEachNodeAfterFilter)return inst;if(inst?.gridOptions?.api?.forEachNodeAfterFilter)return inst.gridOptions.api;}catch(e){console.log('[PV Bot] getAgApi error:',e);}return null;}
@@ -620,7 +617,7 @@ async function botScript(orderData, timings, runId) {
   // DOM-based extPrice — explicit 100ms wait after enterQty for portal to update value cell
   function parseExtPrice(row){const raw=getCellText(row,'value');if(!raw)return 0;const n=parseFloat(raw.replace(/[$,]/g,''));return isNaN(n)?0:n;}
 
-  function calcQty(appOrder,appQoh,avgSales,multiple,isCases){let order=appOrder;if(isCases&&order>0)order=order*multiple;let qty;if(order===0){if(avgSales===0)return{qty:null,reason:'Skipped \u2014 avg sales is 0'};qty=Math.ceil(avgSales*4-appQoh);if(qty<=0)return{qty:null,reason:`Skipped \u2014 already have enough on hand (avg=${avgSales}, qoh=${appQoh})`};}else{qty=order;if(qty<=0)return{qty:null,reason:'Skipped \u2014 order qty \u2264 0'};}if(multiple>1){const rem=qty%multiple;if(rem!==0)qty+=(multiple-rem);}return{qty};}
+  function calcQty(appOrder,appQoh,avgSales,multiple,isCases){let order=appOrder;if(isCases&&order>0)order=order*multiple;let qty;if(order===0){if(avgSales===0)return{qty:null,reason:'Skipped — avg sales is 0'};qty=Math.ceil(avgSales*4-appQoh);if(qty<=0)return{qty:null,reason:`Skipped — already have enough on hand (avg=${avgSales}, qoh=${appQoh})`};}else{qty=order;if(qty<=0)return{qty:null,reason:'Skipped — order qty ≤ 0'};}if(multiple>1){const rem=qty%multiple;if(rem!==0)qty+=(multiple-rem);}return{qty};}
   async function enterQty(row,qty){const cell=row.querySelector('[col-id="unit_qty_chg"]');if(!cell)return false;cell.click();await sleep(250);cell.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true,view:window}));await sleep(400);let input=cell.querySelector('input[aria-label="Input Editor"]')||cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');if(!input){cell.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',keyCode:113,bubbles:true}));await sleep(350);input=cell.querySelector('input')||document.querySelector('.ag-cell-inline-editing input');}if(!input)return false;input.focus();input.select();input.value=String(qty);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));input.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',keyCode:9,bubbles:true}));await sleep(timings.afterQty);return true;}
 
   const items=orderData.items, results={entered:[],skipped:[],notFound:[],flagged:[]};
@@ -631,7 +628,7 @@ async function botScript(orderData, timings, runId) {
     await setFilter('Item No Filter Input',id); await sleep(timings.afterFilter);
     let rows=getVisibleRows(),targetRow=findExactRow(rows,id),usedSub=false;
     if(!targetRow){
-      sendProgress(`${id} \u2014 not in Item No, trying Substituted Item...`,i,items.length,'info',results);
+      sendProgress(`${id} — not in Item No, trying Substituted Item...`,i,items.length,'info',results);
       await clearFilter('Item No Filter Input',true);
       await setFilter('Substituted Item Filter Input',id);
       await sleep(timings.afterSubFilter??timings.afterFilter);
@@ -639,26 +636,26 @@ async function botScript(orderData, timings, runId) {
       targetRow=findSubRow(rows,id);
       usedSub=true;
     }
-    if(!targetRow){results.notFound.push({item:id,order:item.order,qoh:item.qoh,desc:'',reason:'Not found (checked Item No + Substituted Item)'});sendProgress(`${id} \u2014 NOT FOUND`,i+1,items.length,'notfound',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
+    if(!targetRow){results.notFound.push({item:id,order:item.order,qoh:item.qoh,desc:'',reason:'Not found (checked Item No + Substituted Item)'});sendProgress(`${id} — NOT FOUND`,i+1,items.length,'notfound',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const lifecycle=getCellText(targetRow,'life_cycle_status');
-    const lifecycleReasons={'OOS':'OOS \u2014 Out of Stock','ROS':'ROS \u2014 Ranged Out of Store','INOT':'INOT \u2014 Inactive / Not On Tag'};
+    const lifecycleReasons={'OOS':'OOS — Out of Stock','ROS':'ROS — Ranged Out of Store','INOT':'INOT — Inactive / Not On Tag'};
     const gridData=getRowDataFromGrid(id);
     const itemDesc=getItemDescription(targetRow,gridData);
-    if(lifecycleReasons[lifecycle]){results.skipped.push({item:id,desc:itemDesc,reason:lifecycleReasons[lifecycle]});sendProgress(`${id} \u2014 skipped (${lifecycleReasons[lifecycle]})`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
+    if(lifecycleReasons[lifecycle]){results.skipped.push({item:id,desc:itemDesc,reason:lifecycleReasons[lifecycle]});sendProgress(`${id} — skipped (${lifecycleReasons[lifecycle]})`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const avgSales=parseFloat(gridData?.average_sales_last_4_weeks??getCellText(targetRow,'average_sales_last_4_weeks'))||0;
     const multiple=parseInt(gridData?.order_multiple??getCellText(targetRow,'order_multiple'))||1;
     const isCases=item.order<0||item.cases===true,absOrder=Math.abs(item.order);
     const calcResult=calcQty(absOrder,item.qoh,avgSales,multiple,isCases);
-    if(calcResult.qty===null){results.skipped.push({item:id,desc:itemDesc,reason:calcResult.reason});sendProgress(`${id} \u2014 ${calcResult.reason}`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
+    if(calcResult.qty===null){results.skipped.push({item:id,desc:itemDesc,reason:calcResult.reason});sendProgress(`${id} — ${calcResult.reason}`,i+1,items.length,'skip',results);await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true);await sleep(timings.betweenItems);continue;}
     const qty=calcResult.qty, ok=await enterQty(targetRow,qty);
     if(ok){
       await sleep(100); // fixed 100ms wait for portal to update value cell — applies on both item_no and sub paths
       const extPrice=parseExtPrice(targetRow);
       results.entered.push({item:id,qty,usedSub,desc:itemDesc,extPrice});
-      sendProgress(`${id} \u2014 entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);
+      sendProgress(`${id} — entered ${qty}${usedSub?' [via substitute]':''}`,i+1,items.length,'ok',results);
     } else {
       results.flagged.push({item:id,qty,desc:itemDesc,reason:'Could not click/edit Qty cell'});
-      sendProgress(`${id} \u2014 FLAGGED (enter ${qty} manually)`,i+1,items.length,'flag',results);
+      sendProgress(`${id} — FLAGGED (enter ${qty} manually)`,i+1,items.length,'flag',results);
     }
     await clearFilter(usedSub?'Substituted Item Filter Input':'Item No Filter Input',true); await sleep(timings.betweenItems);
   }
@@ -675,13 +672,13 @@ async function devTestEmail() {
   const fakeTimerStart=Date.now()-(4*60*1000+17*1000);
   await setState({phase:'complete',timerStart:fakeTimerStart,orderData:{store:'Lakeshore Rd',operator:'Nipun'},results:{
     entered:[{item:'10045231',qty:6,usedSub:false,desc:'Purina Dog Chow',extPrice:42.50},{item:'10078432',qty:12,usedSub:false,desc:'Royal Canin Indoor',extPrice:138.00}],
-    skipped:[{item:'10011111',desc:'Whiskas Tuna Treats',reason:'OOS \u2014 Out of Stock'},{item:'10022222',desc:'Pedigree Dental Stix',reason:'ROS \u2014 Ranged Out of Store'}],
+    skipped:[{item:'10011111',desc:'Whiskas Tuna Treats',reason:'OOS — Out of Stock'},{item:'10022222',desc:'Pedigree Dental Stix',reason:'ROS — Ranged Out of Store'}],
     notFound:[{item:'10099999',order:4,qoh:1,desc:'',reason:'Not found (checked Item No + Substituted Item)'}],
     flagged:[{item:'10088888',qty:5,desc:"Hill's Science Diet",reason:'Could not click/edit Qty cell'}]
   }});
   localState=await getState();
-  try{await sendCompletionEmail();statusEl.style.color='var(--accent)';statusEl.textContent='\u2713 Sent \u2014 check sarniapetvalu@gmail.com';}
-  catch(e){statusEl.style.color='var(--red)';statusEl.textContent='\u2717 Error: '+e.message;}
+  try{await sendCompletionEmail();statusEl.style.color='var(--accent)';statusEl.textContent='✓ Sent — check sarniapetvalu@gmail.com';}
+  catch(e){statusEl.style.color='var(--red)';statusEl.textContent='✗ Error: '+e.message;}
 }
 
 async function devTestDrive() {
@@ -690,13 +687,13 @@ async function devTestDrive() {
   const date=new Date().toLocaleDateString('en-CA'),base=`DEV_TEST_Lakeshore_Rd_${date}`;
   const jsonContent=JSON.stringify({store:'Lakeshore Rd',date,_devTest:true,items:[{item:'10045231',order:6,qoh:10}]},null,2);
   const csvContent=`Store,Date,Item #,Order Qty,On Hand,Status,Notes\n"Lakeshore Rd","${date}","10045231",6,10,Entered,\n`;
-  try{const results=await Promise.all([chrome.runtime.sendMessage({type:'APPS_POST',payload:{filename:base+'.json',content:jsonContent}}),chrome.runtime.sendMessage({type:'APPS_POST',payload:{filename:base+'.csv',content:csvContent}})]);const allOk=results.every(r=>r?.ok);statusEl.style.color=allOk?'var(--accent)':'var(--red)';statusEl.textContent=allOk?'\u2713 Uploaded \u2014 check Google Drive':'\u2717 Upload failed';}
-  catch(e){statusEl.style.color='var(--red)';statusEl.textContent='\u2717 Error: '+e.message;}
+  try{const results=await Promise.all([chrome.runtime.sendMessage({type:'APPS_POST',payload:{filename:base+'.json',content:jsonContent}}),chrome.runtime.sendMessage({type:'APPS_POST',payload:{filename:base+'.csv',content:csvContent}})]);const allOk=results.every(r=>r?.ok);statusEl.style.color=allOk?'var(--accent)':'var(--red)';statusEl.textContent=allOk?'✓ Uploaded — check Google Drive':'✗ Upload failed';}
+  catch(e){statusEl.style.color='var(--red)';statusEl.textContent='✗ Error: '+e.message;}
 }
 
 async function devTestUpdate() {
   const statusEl=document.getElementById('devUpdateStatus');
   statusEl.style.color='var(--muted)';statusEl.textContent='Fetching update.xml from Vercel...';
-  try{const res=await fetch('https://petvalu-bot.vercel.app/update.xml?t='+Date.now(),{cache:'no-store'});const text=await res.text();const match=text.match(/<version>(.*?)<\/version>/);const latest=match?match[1]:'?',current=browser.runtime.getManifest().version;statusEl.style.color='var(--accent)';statusEl.textContent=`\u2713 Current: v${current} \u2014 Latest: v${latest} \u2014 ${latest===current?'Up to date':'Update available'}`;}
-  catch(e){statusEl.style.color='var(--red)';statusEl.textContent='\u2717 Could not reach Vercel: '+e.message;}
+  try{const res=await fetch('https://petvalu-bot.vercel.app/update.xml?t='+Date.now(),{cache:'no-store'});const text=await res.text();const match=text.match(/<version>(.*?)<\/version>/);const latest=match?match[1]:'?',current=browser.runtime.getManifest().version;statusEl.style.color='var(--accent)';statusEl.textContent=`✓ Current: v${current} — Latest: v${latest} — ${latest===current?'Up to date':'Update available'}`;}
+  catch(e){statusEl.style.color='var(--red)';statusEl.textContent='✗ Could not reach Vercel: '+e.message;}
 }
