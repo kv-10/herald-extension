@@ -606,8 +606,13 @@ async function botScript(orderData, timings, runId) {
     // [2026-09-25] The portal's Substituted Item column id is "subst_item_No", not "substituted_item".
     // The old check never matched, so every order line placed under a substitute number was reported
     // as not found. Check the real id first; keep the old ids as fallbacks.
+    // [2026-09-25b] A match can be the pinned checkbox piece of the row, which has no Qty cell.
+    // Return the main (center) piece of the same row so enterQty can find unit_qty_chg.
     const idL=String(id).trim().toLowerCase();
-    return rows.find(r=>['subst_item_No','substituted_item','item_no'].some(col=>getCellText(r,col).toLowerCase()===idL))||null;
+    const hit=rows.find(r=>['subst_item_No','substituted_item','item_no'].some(col=>getCellText(r,col).toLowerCase()===idL));
+    if(!hit) return null;
+    const rid=hit.getAttribute('row-id');
+    return (rid!==null&&document.querySelector(`.ag-center-cols-container [row-id="${rid}"]`))||hit;
   }
   function getCellText(row,colId){let c=row.querySelector(`[col-id="${colId}"]`);if(c)return c.textContent.trim();const rowId=row.getAttribute('row-id');if(rowId!==null){c=document.querySelector(`.ag-center-cols-container [row-id="${rowId}"] [col-id="${colId}"]`)||document.querySelector(`.ag-pinned-left-cols-container [row-id="${rowId}"] [col-id="${colId}"]`)||document.querySelector(`[row-id="${rowId}"] [col-id="${colId}"]`);if(c)return c.textContent.trim();}return '';}
   function getAgApi(){try{const agGridEl=document.querySelector('ag-grid-angular');if(!agGridEl)return null;const inst=agGridEl['__ag_grid_instance'];if(inst?.api?.forEachNodeAfterFilter)return inst.api;if(inst?.forEachNodeAfterFilter)return inst;if(inst?.gridOptions?.api?.forEachNodeAfterFilter)return inst.gridOptions.api;}catch(e){console.log('[PV Bot] getAgApi error:',e);}return null;}
